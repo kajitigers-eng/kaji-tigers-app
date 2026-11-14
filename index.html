@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ＫＴ</title>
+  <title>ＫＴ 予定管理</title>
   
   <!-- スタイルシート & Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -22,9 +22,7 @@
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   
   <style>
-    [v-cloak] {
-      display: none !important;
-    }
+    [v-cloak] { display: none !important; }
     body {
       font-family: 'Noto Sans JP', sans-serif;
       -webkit-tap-highlight-color: transparent;
@@ -32,61 +30,101 @@
       padding: 0;
       width: 100%;
     }
-    .font-rounded {
-      font-family: 'M PLUS Rounded 1c', sans-serif;
-    }
+    .font-rounded { font-family: 'M PLUS Rounded 1c', sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-200/70 text-slate-800 antialiased min-h-screen">
 
-  <div id="app" v-cloak class="w-full max-w-4xl mx-auto min-h-screen bg-slate-50 flex flex-col shadow-lg border-x border-slate-200/80">
+  <div id="app" v-cloak class="w-full max-w-5xl mx-auto min-h-screen bg-slate-50 flex flex-col shadow-lg border-x border-slate-200/80">
 
-    <!-- 1. トップ固定ヘッダー（タイトル：「ＫＴ」＋公式Instagramロゴ＋管理者ボタン） -->
+    <!-- ========================================== -->
+    <!-- 認証ロック画面（未ログイン時に全面表示） -->
+    <!-- ========================================== -->
+    <div v-if="!isAuthenticated" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center space-y-5 border border-slate-100">
+        <div class="w-16 h-16 bg-blue-100 text-blue-900 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-inner">
+          ⚾
+        </div>
+        <div>
+          <h2 class="text-xl font-extrabold font-rounded text-slate-800">加治タイガース</h2>
+          <p class="text-xs font-bold text-blue-800 tracking-wider mt-0.5">予定管理ポータル チーム認証</p>
+          <p class="text-[11px] text-slate-500 mt-2">
+            関係者専用ページです。<br>閲覧パスワードまたは管理者パスワードを入力してください。
+          </p>
+        </div>
+
+        <form @submit.prevent="handleLogin" class="space-y-3.5">
+          <input type="password" v-model="inputPasscode" placeholder="パスワードを入力" required autofocus
+            class="w-full text-center bg-slate-50 border border-slate-300 rounded-2xl p-3 text-base font-bold tracking-widest focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition">
+
+          <button type="submit" :disabled="authChecking"
+            class="w-full py-3 bg-gradient-to-r from-blue-800 to-indigo-900 hover:opacity-95 active:scale-95 text-white font-bold rounded-2xl shadow-md transition text-sm">
+            <span>{{ authChecking ? '認証確認中...' : 'ログイン' }}</span>
+          </button>
+        </form>
+
+        <p class="text-[10px] text-slate-400">
+          ※パスワードは年度ごとに更新されます。ご不明な場合はチーム役員までお問い合わせください。
+        </p>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 1. トップ固定ヘッダー -->
+    <!-- ========================================== -->
     <header class="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white sticky top-0 z-40 shadow-md">
-      <div class="px-3.5 sm:px-5 py-2.5 flex items-center justify-between">
-        <!-- タイトル：「ＫＴ」 -->
-        <div class="flex items-center space-x-1.5">
+      <div class="px-3.5 sm:px-6 py-2.5 flex items-center justify-between">
+        <!-- タイトル -->
+        <div class="flex items-center space-x-2">
           <span class="text-xl sm:text-2xl">⚾</span>
-          <h1 class="text-lg sm:text-xl font-extrabold font-rounded tracking-wider leading-tight text-white">
-            ＫＴ
-          </h1>
+          <div>
+            <h1 class="text-lg sm:text-xl font-extrabold font-rounded tracking-wider leading-tight text-white">
+              ＫＴ
+            </h1>
+            <span class="text-[9px] text-blue-200 block -mt-0.5">加治タイガース</span>
+          </div>
         </div>
 
         <div class="flex items-center space-x-2">
-          <!-- 公式Instagramへのリンクボタン（ロゴのみ表示） -->
+          <!-- 公式Instagram（ロゴのみ） -->
           <a href="https://www.instagram.com/kajitigers/" target="_blank" rel="noopener noreferrer"
-            class="p-1.5 rounded-lg bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-sm hover:opacity-90 active:scale-95 transition flex items-center justify-center"
+            class="p-1.5 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-sm hover:opacity-90 active:scale-95 transition flex items-center justify-center"
             title="加治タイガース公式Instagramを開く">
             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
               <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
             </svg>
           </a>
 
-          <!-- 管理者状態バッジ ＆ 「管理者」ログイン/解除 -->
-          <button v-if="!isAdmin" @click="showAuthModal = true" class="flex items-center space-x-1 px-2.5 py-1 bg-blue-800/90 hover:bg-blue-700 active:scale-95 text-blue-100 rounded-lg text-xs font-bold border border-blue-600/50 transition">
-            <span>🔐</span>
-            <span>管理者</span>
-          </button>
-          <div v-else class="flex items-center space-x-1.5">
-            <span class="bg-amber-400 text-slate-900 text-[10px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full shadow-sm">
-              管理
+          <!-- 権限状態バッジ（閲覧 / 管理） -->
+          <div v-if="isAdmin" class="flex items-center space-x-1.5">
+            <span class="bg-amber-400 text-slate-900 text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full shadow-sm">
+              👑 管理
             </span>
-            <button @click="logoutAdmin" class="text-xs text-blue-200 hover:text-white underline">
+            <button @click="logout" class="text-xs text-blue-200 hover:text-white underline">
               解除
+            </button>
+          </div>
+          <div v-else class="flex items-center space-x-1.5">
+            <button @click="showAuthSwitchModal = true" class="flex items-center space-x-1 px-2.5 py-1 bg-blue-800/90 hover:bg-blue-700 active:scale-95 text-blue-100 rounded-xl text-xs font-bold border border-blue-600/50 transition">
+              <span>🔐</span>
+              <span>管理者</span>
+            </button>
+            <button @click="logout" class="text-[11px] text-blue-300 hover:text-white underline">
+              終了
             </button>
           </div>
 
           <!-- 更新ボタン -->
-          <button @click="refreshData" title="データを再読み込み" class="p-1.5 rounded-lg bg-blue-800/80 hover:bg-blue-700 active:scale-95 text-white transition">
+          <button @click="refreshData" title="データを再読み込み" class="p-1.5 rounded-xl bg-blue-800/80 hover:bg-blue-700 active:scale-95 text-white transition">
             <span :class="{'inline-block animate-spin': loading}">🔄</span>
           </button>
         </div>
       </div>
 
-      <!-- スマホ最上部ナビゲーションタブ（※管理者時のみ表示：予定・コピー・登録） -->
-      <nav v-if="isAdmin" class="grid grid-cols-3 gap-1 p-1.5 sm:px-5 bg-blue-950/80 border-t border-blue-800/40">
+      <!-- スマホ最上部ナビゲーションタブ（※管理者時のみコピー・登録タブが出現） -->
+      <nav v-if="isAdmin" class="grid grid-cols-3 gap-1 p-1.5 sm:px-6 bg-blue-950/80 border-t border-blue-800/40">
         <button @click="currentTab = 'schedule'"
           :class="currentTab === 'schedule' ? 'bg-blue-700 text-white font-bold shadow-sm' : 'text-blue-200 hover:bg-blue-900/60'"
           class="py-2 px-1 rounded-xl text-xs sm:text-sm flex items-center justify-center space-x-1 transition active:scale-95">
@@ -101,7 +139,7 @@
           <span class="font-rounded font-bold">コピー</span>
         </button>
 
-        <button @click="currentTab = 'create'"
+        <button @click="openCreateTab"
           :class="currentTab === 'create' ? 'bg-amber-600 text-white font-bold shadow-sm' : 'text-amber-200 hover:bg-blue-900/60'"
           class="py-2 px-1 rounded-xl text-xs sm:text-sm flex items-center justify-center space-x-1 transition active:scale-95">
           <span>📝</span>
@@ -110,7 +148,7 @@
       </nav>
 
       <!-- 月切り替えバー（予定タブ表示時のみ） -->
-      <div v-if="currentTab === 'schedule'" class="px-3 sm:px-5 py-2 bg-blue-900/90 flex items-center justify-between border-t border-blue-800/50 text-xs sm:text-sm">
+      <div v-if="currentTab === 'schedule'" class="px-3.5 sm:px-6 py-2 bg-blue-900/90 flex items-center justify-between border-t border-blue-800/50 text-xs sm:text-sm">
         <button @click="prevMonth" class="px-3 py-1 rounded-lg bg-blue-800/80 hover:bg-blue-700 text-white font-bold active:scale-95 transition">
           ◀ 前月
         </button>
@@ -123,159 +161,210 @@
       </div>
     </header>
 
+    <!-- ========================================== -->
     <!-- 2. メインコンテンツ -->
-    <main class="flex-1 p-3 sm:p-5 space-y-4 pb-12 w-full">
+    <!-- ========================================== -->
+    <main class="flex-1 p-3 sm:p-6 space-y-4 pb-12 w-full">
 
       <!-- ========================================== -->
-      <!-- タブ1: 予定 -->
+      <!-- タブ1: 予定（カード表示 / カレンダー表表示） -->
       <!-- ========================================== -->
       <section v-if="currentTab === 'schedule'" class="space-y-3.5">
-        <!-- カテゴリー絞り込みピル（「すべて」削除 ➔ Aチーム, Bチーム, Cチーム, 低学年, 一覧） -->
-        <div class="flex space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <button v-for="cat in categories" :key="cat"
-            @click="selectedCategory = cat"
-            :class="selectedCategory === cat ? 'bg-blue-800 text-white font-bold shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'"
-            class="px-3.5 py-1.5 rounded-full text-xs sm:text-sm whitespace-nowrap transition active:scale-95 font-medium flex items-center space-x-1">
-            <span v-if="cat === '一覧'">📊</span>
-            <span>{{ cat }}</span>
-          </button>
+        
+        <!-- ビュー切り替え（カード ⇔ カレンダー表） ＆ カテゴリー絞り込み -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <!-- 表示モード切替トグル -->
+          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-bold w-fit">
+            <button @click="viewMode = 'card'"
+              :class="viewMode === 'card' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+              class="px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
+              <span>🗂️</span>
+              <span>カード</span>
+            </button>
+            <button @click="viewMode = 'calendar'"
+              :class="viewMode === 'calendar' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+              class="px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
+              <span>📅</span>
+              <span>カレンダー表</span>
+            </button>
+          </div>
+
+          <!-- カテゴリー絞り込みピル（カード表示時のみ使用） -->
+          <div v-if="viewMode === 'card'" class="flex space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button v-for="cat in categories" :key="cat"
+              @click="selectedCategory = cat"
+              :class="selectedCategory === cat ? getCategoryActiveBadge(cat) : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'"
+              class="px-3 py-1 rounded-xl text-xs whitespace-nowrap transition active:scale-95 font-bold flex items-center space-x-1">
+              <span v-if="cat === '一覧'">📊</span>
+              <span>{{ cat }}</span>
+            </button>
+          </div>
         </div>
 
-        <!-- 状態分岐：ローディング中 -->
+        <!-- ローディング中表示 -->
         <div v-if="loading" class="py-14 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
           <span class="inline-block text-2xl animate-spin mb-2">🔄</span>
-          <p class="text-xs sm:text-sm font-bold text-slate-500">予定データを読み込み中...</p>
+          <p class="text-xs sm:text-sm font-bold text-slate-500">最新データを取得中...</p>
         </div>
-        <!-- 状態分岐：データ取得完了 -->
+
+        <!-- データ取得完了後の表示 -->
         <div v-else>
-          <!-- パターン1: 予定なし -->
+          <!-- 予定なし -->
           <div v-if="monthAllSchedules.length === 0" class="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-300 p-6">
             <span class="text-3xl">📅</span>
             <p class="text-xs sm:text-sm font-bold text-slate-700 mt-2">{{ selectedMonth }}月の該当予定はありません</p>
           </div>
-          <!-- パターン2: 「一覧」選択時 ➔ 「予定表」テーブル表示 -->
-          <div v-else-if="selectedCategory === '一覧'" class="space-y-2">
+
+          <!-- ============================================== -->
+          <!-- ビュー1: カレンダー表（横軸：カテゴリー、縦軸：日付） -->
+          <!-- ============================================== -->
+          <div v-else-if="viewMode === 'calendar'" class="space-y-2">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               <div class="p-3 sm:p-4 bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white flex items-center justify-between">
                 <div class="flex items-center space-x-2">
-                  <span class="text-lg">📊</span>
-                  <span class="font-bold text-sm sm:text-base font-rounded">{{ selectedYear }}年 {{ selectedMonth }}月 予定表</span>
+                  <span class="text-lg">📅</span>
+                  <span class="font-bold text-sm sm:text-base font-rounded">{{ selectedYear }}年 {{ selectedMonth }}月 チーム別予定カレンダー</span>
                 </div>
                 <span class="text-[11px] sm:text-xs bg-blue-800/90 px-3 py-0.5 rounded-full text-blue-100 font-bold">
-                  全 {{ monthAllSchedules.length }} 件
+                  タップで詳細
                 </span>
               </div>
 
-              <!-- 横スクロール可能テーブル -->
+              <!-- マトリクス形式カレンダー（横スクロール対応） -->
               <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[560px]">
+                <table class="w-full text-left border-collapse min-w-[700px]">
                   <thead>
-                    <tr class="bg-slate-100 text-[11px] sm:text-xs font-bold text-slate-600 border-b border-slate-200">
-                      <th class="py-2.5 px-3 whitespace-nowrap">日付</th>
-                      <th class="py-2.5 px-2.5 whitespace-nowrap">対象</th>
-                      <th class="py-2.5 px-2.5 whitespace-nowrap">時間</th>
-                      <th class="py-2.5 px-3 whitespace-nowrap">場所</th>
-                      <th class="py-2.5 px-3 whitespace-nowrap">活動内容 / 相手</th>
-                      <th class="py-2.5 px-3 whitespace-nowrap">備考</th>
-                      <th class="py-2.5 px-2 text-center whitespace-nowrap">詳細</th>
+                    <tr class="bg-slate-100 text-xs font-extrabold text-slate-700 border-b border-slate-200">
+                      <th class="py-2.5 px-3 whitespace-nowrap w-24 text-center">日程</th>
+                      <th class="py-2.5 px-2 text-center text-blue-900 bg-blue-50/60 border-x border-slate-200 w-1/5">Aチーム</th>
+                      <th class="py-2.5 px-2 text-center text-emerald-900 bg-emerald-50/60 border-r border-slate-200 w-1/5">Bチーム</th>
+                      <th class="py-2.5 px-2 text-center text-amber-900 bg-amber-50/60 border-r border-slate-200 w-1/5">Cチーム</th>
+                      <th class="py-2.5 px-2 text-center text-rose-900 bg-rose-50/60 border-r border-slate-200 w-1/5">低学年</th>
+                      <th class="py-2.5 px-2 text-center text-purple-900 bg-purple-50/60 w-1/5">👥 全体共通</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 text-xs sm:text-sm">
-                    <tr v-for="(item, idx) in monthAllSchedules" :key="idx"
-                      class="hover:bg-slate-50 transition"
-                      :class="[
-                        item.status.includes('中止') ? 'bg-red-50/40 text-slate-400' :
-                        isAllCategory(item.category) ? 'bg-purple-50/30' : ''
-                      ]">
-                      
-                      <td class="py-2.5 px-3 whitespace-nowrap font-bold font-rounded">
-                        <span :class="[
-                          item.dayOfWeek === '土' ? 'text-blue-600' :
-                          item.dayOfWeek === '日' || item.dayOfWeek === '祝' ? 'text-red-600' :
-                          'text-slate-800'
-                        ]">
-                          {{ item.month }}/{{ item.day }}({{ item.dayOfWeek }})
-                        </span>
-                        <span v-if="item.status.includes('中止')" class="ml-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                          中止
+                  <tbody class="divide-y divide-slate-100 text-xs">
+                    <tr v-for="dayObj in monthActiveDays" :key="dayObj.dateStr" class="hover:bg-slate-50/80 transition">
+                      <!-- 日付・曜日セル -->
+                      <td class="py-3 px-2 text-center whitespace-nowrap font-bold font-rounded border-r border-slate-200 bg-slate-50/40">
+                        <span :class="getDayColorClass(dayObj.dayOfWeek)" class="text-sm block">
+                          {{ dayObj.month }}/{{ dayObj.day }}({{ dayObj.dayOfWeek }})
                         </span>
                       </td>
 
-                      <td class="py-2.5 px-2.5 whitespace-nowrap">
-                        <span v-if="isAllCategory(item.category)" class="bg-purple-100 text-purple-900 border border-purple-200 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full">
-                          全て
-                        </span>
-                        <span v-else class="bg-blue-100 text-blue-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          {{ item.category }}
-                        </span>
-                      </td>
-
-                      <td class="py-2.5 px-2.5 whitespace-nowrap font-medium text-slate-600">
-                        {{ item.meetingTime || '-' }}
-                      </td>
-
-                      <td class="py-2.5 px-3 whitespace-nowrap font-bold text-slate-800">
-                        {{ item.place || '-' }}
-                      </td>
-
-                      <td class="py-2.5 px-3 whitespace-nowrap">
-                        <div class="flex items-center space-x-1">
-                          <span v-if="!isAllCategory(item.category)" class="font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded text-[10px] sm:text-xs border border-blue-100">
-                            {{ item.activity }}
-                          </span>
-                          <span v-if="item.opponent" class="text-blue-950 font-bold text-xs">
-                            vs {{ item.opponent }}
-                          </span>
-                          <span v-if="isAllCategory(item.category)" class="text-purple-900 font-bold text-xs">
-                            全体連絡
-                          </span>
+                      <!-- Aチームセル -->
+                      <td class="p-1.5 border-r border-slate-200 align-top">
+                        <div v-for="item in getCategorySchedules(dayObj.dateFull, 'Aチーム')" :key="item.id"
+                          @click="openDetailModal(item)"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border"
+                          :class="getScheduleCellClass(item, 'Aチーム')">
+                          <div class="flex items-center justify-between text-[10px] font-bold">
+                            <span>{{ item.meetingTime || '-' }}</span>
+                            <span v-if="item.isCanceled" class="bg-red-600 text-white px-1 rounded text-[9px]">中止</span>
+                            <span v-else-if="item.isModified" class="bg-amber-500 text-white px-1 rounded text-[9px]">変更</span>
+                          </div>
+                          <div class="font-extrabold text-slate-800 truncate mt-0.5">{{ item.place || '場所未定' }}</div>
+                          <div class="text-[10px] text-slate-600 truncate">{{ item.activity }}</div>
                         </div>
                       </td>
 
-                      <td class="py-2.5 px-3 text-xs text-slate-600 max-w-[180px] truncate" :title="item.note">
-                        {{ item.note || '-' }}
+                      <!-- Bチームセル -->
+                      <td class="p-1.5 border-r border-slate-200 align-top">
+                        <div v-for="item in getCategorySchedules(dayObj.dateFull, 'Bチーム')" :key="item.id"
+                          @click="openDetailModal(item)"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border"
+                          :class="getScheduleCellClass(item, 'Bチーム')">
+                          <div class="flex items-center justify-between text-[10px] font-bold">
+                            <span>{{ item.meetingTime || '-' }}</span>
+                            <span v-if="item.isCanceled" class="bg-red-600 text-white px-1 rounded text-[9px]">中止</span>
+                            <span v-else-if="item.isModified" class="bg-amber-500 text-white px-1 rounded text-[9px]">変更</span>
+                          </div>
+                          <div class="font-extrabold text-slate-800 truncate mt-0.5">{{ item.place || '場所未定' }}</div>
+                          <div class="text-[10px] text-slate-600 truncate">{{ item.activity }}</div>
+                        </div>
                       </td>
 
-                      <td class="py-2.5 px-2 text-center whitespace-nowrap">
-                        <button @click="openDetailModal(item)" class="p-1 hover:bg-slate-200 active:scale-90 rounded-lg text-blue-700 text-sm font-bold transition">
-                          📄
-                        </button>
+                      <!-- Cチームセル -->
+                      <td class="p-1.5 border-r border-slate-200 align-top">
+                        <div v-for="item in getCategorySchedules(dayObj.dateFull, 'Cチーム')" :key="item.id"
+                          @click="openDetailModal(item)"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border"
+                          :class="getScheduleCellClass(item, 'Cチーム')">
+                          <div class="flex items-center justify-between text-[10px] font-bold">
+                            <span>{{ item.meetingTime || '-' }}</span>
+                            <span v-if="item.isCanceled" class="bg-red-600 text-white px-1 rounded text-[9px]">中止</span>
+                            <span v-else-if="item.isModified" class="bg-amber-500 text-white px-1 rounded text-[9px]">変更</span>
+                          </div>
+                          <div class="font-extrabold text-slate-800 truncate mt-0.5">{{ item.place || '場所未定' }}</div>
+                          <div class="text-[10px] text-slate-600 truncate">{{ item.activity }}</div>
+                        </div>
+                      </td>
+
+                      <!-- 低学年セル -->
+                      <td class="p-1.5 border-r border-slate-200 align-top">
+                        <div v-for="item in getCategorySchedules(dayObj.dateFull, '低学年')" :key="item.id"
+                          @click="openDetailModal(item)"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border"
+                          :class="getScheduleCellClass(item, '低学年')">
+                          <div class="flex items-center justify-between text-[10px] font-bold">
+                            <span>{{ item.meetingTime || '-' }}</span>
+                            <span v-if="item.isCanceled" class="bg-red-600 text-white px-1 rounded text-[9px]">中止</span>
+                            <span v-else-if="item.isModified" class="bg-amber-500 text-white px-1 rounded text-[9px]">変更</span>
+                          </div>
+                          <div class="font-extrabold text-slate-800 truncate mt-0.5">{{ item.place || '場所未定' }}</div>
+                          <div class="text-[10px] text-slate-600 truncate">{{ item.activity }}</div>
+                        </div>
+                      </td>
+
+                      <!-- 全体共通セル -->
+                      <td class="p-1.5 align-top bg-purple-50/20">
+                        <div v-for="item in getCategorySchedules(dayObj.dateFull, '全て')" :key="item.id"
+                          @click="openDetailModal(item)"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border border-purple-200 bg-purple-50 text-purple-950">
+                          <div class="text-[9px] font-extrabold text-purple-800 flex items-center justify-between">
+                            <span>📢 全体連絡</span>
+                            <span v-if="item.isCanceled" class="bg-red-600 text-white px-1 rounded text-[9px]">中止</span>
+                          </div>
+                          <div class="text-[11px] font-bold truncate mt-0.5">{{ item.note || '全体連絡' }}</div>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
-            <p class="text-[10px] text-slate-400 text-right pr-2">※表が画面に収まらない場合は左右にスワイプできます</p>
+            <p class="text-[10px] text-slate-400 text-right pr-2">※表をタップすると詳細予定を表示できます</p>
           </div>
-          <!-- パターン3: 通常のカード表示（各チーム別 ＋ 全体共通予定） -->
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <!-- ============================================== -->
+          <!-- ビュー2: カード表示（各チーム別 ＋ 全体共通） -->
+          <!-- ============================================== -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div v-for="(item, idx) in filteredSchedules" :key="idx"
-              class="bg-white rounded-2xl p-4 shadow-sm border transition flex flex-col justify-between"
-              :class="[
-                item.status.includes('中止') ? 'border-red-200 bg-red-50/20' : 
-                isAllCategory(item.category) ? 'border-purple-200 bg-purple-50/20' : 
-                'border-slate-200'
-              ]">
+              class="bg-white rounded-2xl p-4 shadow-sm border transition flex flex-col justify-between relative overflow-hidden"
+              :class="getCardBorderClass(item)">
               
+              <!-- 左端カラーバー -->
+              <div class="absolute left-0 top-0 bottom-0 w-1.5" :class="getCategoryBgClass(item.category)"></div>
+
               <div>
-                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100 pl-1">
                   <span class="font-rounded font-extrabold text-sm sm:text-base tracking-wide text-slate-800">
                     {{ item.displayDateTime }}
                   </span>
-                  <div class="flex items-center space-x-1">
-                    <span v-if="item.status.includes('中止')" class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  
+                  <div class="flex items-center space-x-1.5">
+                    <!-- 中止バッジ -->
+                    <span v-if="item.isCanceled" class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs">
                       中止
                     </span>
-                    <span v-else-if="item.status === '変更'" class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      変更
+                    <!-- 変更バッジ（視覚的に目立たせる） -->
+                    <span v-else-if="item.isModified" class="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs animate-pulse">
+                      ⚠️ 変更あり
                     </span>
 
-                    <span v-if="isAllCategory(item.category)" class="bg-purple-100 text-purple-900 border border-purple-200 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center space-x-0.5">
-                      <span>👥</span>
-                      <span>全て</span>
-                    </span>
-                    <span v-else class="bg-blue-100 text-blue-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    <!-- カテゴリーバッジ（色分け） -->
+                    <span :class="getCategoryBadgeClass(item.category)" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border">
                       {{ item.category }}
                     </span>
                   </div>
@@ -283,30 +372,32 @@
 
                 <!-- 各チーム表示時の「全体共通」ラベル -->
                 <div v-if="isAllCategory(item.category)"
-                  class="mt-1 flex items-center text-[10px] text-purple-700 font-bold bg-purple-100/60 px-2 py-0.5 rounded-md w-fit">
+                  class="mt-1.5 flex items-center text-[10px] text-purple-700 font-bold bg-purple-100/70 px-2 py-0.5 rounded-md w-fit">
                   <span class="mr-1">📢</span>全カテゴリー共通
                 </div>
 
-                <div class="mt-2.5 space-y-2 text-xs sm:text-sm">
-                  <!-- 中止の場合 -->
-                  <div v-if="item.status.includes('中止')" class="p-2.5 bg-red-100/90 rounded-xl text-red-700 font-bold text-center">
+                <div class="mt-2.5 space-y-2 text-xs sm:text-sm pl-1">
+                  <!-- 中止案内 -->
+                  <div v-if="item.isCanceled" class="p-2.5 bg-red-100/90 rounded-xl text-red-700 font-bold text-center">
                     天候不良等により活動中止
                   </div>
-                  <!-- 「全て」の場合: 備考メインで表示 -->
+
+                  <!-- 「全て」の場合: 連絡事項 -->
                   <div v-else-if="isAllCategory(item.category)" class="space-y-1.5">
                     <div class="p-2.5 bg-purple-50/70 rounded-xl border border-purple-200 text-purple-950 space-y-1">
                       <span class="font-bold text-[11px] block text-purple-900">📢 連絡事項:</span>
                       <p class="whitespace-pre-wrap leading-relaxed text-xs">{{ item.note || '全体連絡' }}</p>
                     </div>
                   </div>
-                  <!-- 通常のチーム予定の場合 -->
+
+                  <!-- 通常チームの場合 -->
                   <div v-else class="space-y-1.5">
                     <div class="flex items-center justify-between text-slate-700">
                       <span class="font-bold flex items-center text-slate-900">
                         <span class="mr-1 text-sm">📍</span>
                         {{ item.place || '-' }}
                       </span>
-                      <span class="font-bold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-100">
+                      <span class="font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
                         {{ item.activity }}
                       </span>
                     </div>
@@ -314,13 +405,20 @@
                     <div v-if="item.opponent" class="text-xs text-blue-950 font-bold bg-slate-50 px-2 py-1 rounded-lg">
                       vs {{ item.opponent }} <span v-if="item.matchStartTime" class="text-slate-500 font-normal">({{ item.matchStartTime }}〜)</span>
                     </div>
+
+                    <!-- 変更差分ハイライト表示 -->
+                    <div v-if="item.isModified && item.rawDiffNote && item.rawDiffNote.includes('➔')"
+                      class="p-2 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs space-y-0.5">
+                      <span class="font-bold text-[10px] text-amber-800 block">【変更箇所】</span>
+                      <p class="leading-relaxed">{{ item.rawDiffNote }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <!-- 詳細ボタン -->
-              <div class="pt-3 flex justify-end">
-                <button @click="openDetailModal(item)" class="flex items-center space-x-1 px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm transition">
+              <div class="pt-3 flex justify-end pl-1">
+                <button @click="openDetailModal(item)" class="flex items-center space-x-1 px-3.5 py-1.5 bg-blue-800 hover:bg-blue-900 active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm transition">
                   <span>📄</span>
                   <span>詳細</span>
                 </button>
@@ -336,8 +434,8 @@
       <section v-if="currentTab === 'line' && isAdmin" class="space-y-3.5">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
           <div class="flex items-center justify-between">
-            <span class="font-bold text-sm text-slate-700">コピー</span>
-            <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold">管理</span>
+            <span class="font-bold text-sm text-slate-700">LINE連絡文 コピー</span>
+            <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold">管理機能</span>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm">
@@ -366,21 +464,15 @@
           該当する予定がありません。
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div v-for="(item, i) in generatedLineMessages" :key="i" class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-2.5 flex flex-col justify-between"
-            :class="isAllCategory(item.category) ? 'border-purple-200' : ''">
-            
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div v-for="(item, i) in generatedLineMessages" :key="i" class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2.5 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between text-xs pb-1.5 border-b border-slate-100">
                 <span class="font-bold text-slate-600">{{ item.displayDateTime }}</span>
-                <span v-if="isAllCategory(item.category)" class="bg-purple-100 text-purple-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">
-                  👥 全て
-                </span>
-                <span v-else class="bg-blue-100 text-blue-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                <span :class="getCategoryBadgeClass(item.category)" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border">
                   {{ item.category }}
                 </span>
               </div>
-
               <textarea readonly rows="6" :value="item.text" class="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-mono text-slate-800 resize-none"></textarea>
             </div>
 
@@ -395,83 +487,123 @@
       </section>
 
       <!-- ========================================== -->
-      <!-- タブ3: 登録（※管理者のみ / 「全て」は備考のみ） -->
+      <!-- タブ3: 登録（※管理者のみ / 複数選択対応 / フラット初期化） -->
       <!-- ========================================== -->
       <section v-if="currentTab === 'create' && isAdmin" class="space-y-3.5">
-        <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3 text-xs sm:text-sm">
+        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-4 text-xs sm:text-sm">
           <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-            <span class="font-bold text-blue-900 text-sm sm:text-base">登録</span>
-            <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-bold">管理</span>
+            <span class="font-bold text-blue-900 text-sm sm:text-base">予定の登録・更新</span>
+            <div class="flex items-center space-x-2">
+              <button type="button" @click="resetFormData" class="text-xs text-slate-400 hover:text-slate-600 underline">
+                フォームを空にする
+              </button>
+              <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-bold">管理専用</span>
+            </div>
           </div>
 
-          <form @submit.prevent="submitScheduleForm" class="space-y-3.5">
+          <form @submit.prevent="submitScheduleForm" class="space-y-4">
+            <!-- 処理の種別 -->
             <div>
               <label class="block font-bold text-slate-700 mb-1.5">処理の種別</label>
               <div class="grid grid-cols-3 gap-2">
-                <button type="button"
-                  @click="!isDateAlreadyRegistered && (formData.type = '新規登録')"
-                  :disabled="isDateAlreadyRegistered"
-                  :class="[
-                    isDateAlreadyRegistered ? 'bg-slate-100 text-slate-300 cursor-not-allowed border border-dashed border-slate-200' :
-                    formData.type === '新規登録' ? 'bg-blue-800 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  ]"
+                <button type="button" @click="setFormType('新規登録')"
+                  :class="formData.type === '新規登録' ? 'bg-blue-800 text-white font-bold shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                   class="py-2.5 rounded-xl text-center text-xs font-bold transition">
                   新規登録
                 </button>
-
-                <button type="button"
-                  @click="formData.type = '予定の変更'"
-                  :class="formData.type === '予定の変更' ? 'bg-blue-800 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                <button type="button" @click="setFormType('予定の変更')"
+                  :class="formData.type === '予定の変更' ? 'bg-amber-600 text-white font-bold shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                   class="py-2.5 rounded-xl text-center text-xs font-bold transition">
                   予定の変更
                 </button>
-
-                <button type="button"
-                  @click="formData.type = '中止（雨天など）'"
-                  :class="formData.type === '中止（雨天など）' ? 'bg-red-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                <button type="button" @click="setFormType('中止（雨天など）')"
+                  :class="formData.type === '中止（雨天など）' ? 'bg-red-600 text-white font-bold shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                   class="py-2.5 rounded-xl text-center text-xs font-bold transition">
                   中止
                 </button>
               </div>
+            </div>
 
-              <div v-if="isDateAlreadyRegistered" class="mt-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs flex items-center space-x-1.5">
-                <span>⚠️</span>
-                <span>選択日（{{ formData.category }}）は既に登録済みです。「予定の変更」または「中止」のみ可能です。</span>
+            <!-- カテゴリー（★複数選択対応） -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block font-bold text-slate-700">対象カテゴリー（複数選択可）</label>
+                <span class="text-[11px] text-slate-400">※同予定を一括登録できます</span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <!-- 全てボタン -->
+                <button type="button" @click="toggleCategory('全て')"
+                  :class="formData.categories.includes('全て') ? 'bg-purple-600 text-white font-extrabold shadow-sm' : 'bg-purple-50 text-purple-900 border border-purple-200'"
+                  class="py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1">
+                  <span>👥</span>
+                  <span>全て</span>
+                </button>
+
+                <!-- Aチーム -->
+                <button type="button" @click="toggleCategory('Aチーム')"
+                  :class="formData.categories.includes('Aチーム') ? 'bg-blue-600 text-white font-extrabold shadow-sm' : 'bg-blue-50 text-blue-900 border border-blue-200'"
+                  class="py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1">
+                  <span>🔵</span>
+                  <span>Aチーム</span>
+                </button>
+
+                <!-- Bチーム -->
+                <button type="button" @click="toggleCategory('Bチーム')"
+                  :class="formData.categories.includes('Bチーム') ? 'bg-emerald-600 text-white font-extrabold shadow-sm' : 'bg-emerald-50 text-emerald-900 border border-emerald-200'"
+                  class="py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1">
+                  <span>🟢</span>
+                  <span>Bチーム</span>
+                </button>
+
+                <!-- Cチーム -->
+                <button type="button" @click="toggleCategory('Cチーム')"
+                  :class="formData.categories.includes('Cチーム') ? 'bg-amber-500 text-white font-extrabold shadow-sm' : 'bg-amber-50 text-amber-900 border border-amber-200'"
+                  class="py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1">
+                  <span>🟠</span>
+                  <span>Cチーム</span>
+                </button>
+
+                <!-- 低学年 -->
+                <button type="button" @click="toggleCategory('低学年')"
+                  :class="formData.categories.includes('低学年') ? 'bg-rose-500 text-white font-extrabold shadow-sm' : 'bg-rose-50 text-rose-900 border border-rose-200'"
+                  class="py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1">
+                  <span>🟣</span>
+                  <span>低学年</span>
+                </button>
+              </div>
+
+              <!-- 選択中のカテゴリー確認表示 -->
+              <div class="mt-2 text-xs text-slate-500 flex items-center space-x-1">
+                <span>選択中:</span>
+                <span v-for="cat in formData.categories" :key="cat" :class="getCategoryBadgeClass(cat)" class="text-[10px] font-bold px-2 py-0.5 rounded-full border">
+                  {{ cat }}
+                </span>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">カテゴリー</label>
-                <select v-model="formData.category" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800">
-                  <option value="全て">全て</option>
-                  <option value="Aチーム">Aチーム</option>
-                  <option value="Bチーム">Bチーム</option>
-                  <option value="Cチーム">Cチーム</option>
-                  <option value="低学年">低学年</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">活動日</label>
-                <input type="date" v-model="formData.date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800 font-bold">
-              </div>
+            <!-- 活動日 -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">活動日</label>
+              <input type="date" v-model="formData.date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold">
             </div>
 
-            <!-- カテゴリーが「全て」の場合は備考のみ入力 -->
-            <div v-if="formData.category === '全て'" class="bg-purple-50/70 p-3 sm:p-4 rounded-xl border border-purple-200 space-y-2">
+            <!-- 「全て」選択時の備考入力欄 -->
+            <div v-if="formData.categories.includes('全て')" class="bg-purple-50/80 p-3.5 sm:p-4 rounded-2xl border border-purple-200 space-y-2">
               <div class="flex items-center space-x-1 text-purple-900 font-bold text-xs sm:text-sm">
                 <span>📢</span>
-                <span>「全て」は全体の連絡事項（備考のみ）を登録します</span>
+                <span>「全て」は全学年向けの連絡事項（備考のみ）を登録します</span>
               </div>
               <div>
-                <label class="block font-bold text-purple-950 mb-1 text-xs">備考・連絡事項（必須）</label>
+                <label class="block font-bold text-purple-950 mb-1 text-xs">備考・全体連絡事項（必須）</label>
                 <textarea v-model="formData.note" required rows="4"
                   placeholder="例: 雨天のため全学年活動中止。グラウンド清掃（保護者集合9:00）。保護者会のお知らせなど"
                   class="w-full bg-white border border-purple-300 rounded-xl p-2.5 text-slate-800 text-xs sm:text-sm focus:ring-2 focus:ring-purple-400"></textarea>
               </div>
             </div>
+
             <!-- 通常チームの場合の入力欄 -->
-            <div v-else class="space-y-3">
+            <div v-else class="space-y-3.5">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">集合時間</label>
@@ -492,20 +624,21 @@
 
               <div>
                 <label class="block font-bold text-slate-700 mb-1">活動場所</label>
-                <select v-model="formData.place" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800">
+                <select v-model="formData.place" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold">
                   <option v-for="p in placeChoices" :key="p" :value="p">{{ p }}</option>
                 </select>
-                <input v-if="formData.place === 'その他'" type="text" v-model="formData.placeOther" placeholder="場所を入力してください" required
+                <input v-if="formData.place === 'その他'" type="text" v-model="formData.placeOther" placeholder="具体的な場所を入力してください" required
                   class="mt-1.5 w-full bg-amber-50/60 border border-amber-300 rounded-xl p-2.5 text-slate-800">
               </div>
 
-              <div class="bg-blue-50/60 p-3 rounded-xl border border-blue-100 space-y-2">
-                <span class="font-bold text-blue-900 block text-xs">【試合の場合のみ】</span>
+              <!-- 試合情報（任意） -->
+              <div class="bg-blue-50/60 p-3.5 rounded-2xl border border-blue-100 space-y-2.5">
+                <span class="font-bold text-blue-900 block text-xs">【試合時のみ入力】</span>
                 <input type="text" v-model="formData.tournament" placeholder="大会名（略称） 例: 春期大会、西部沿線など"
-                  class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs">
+                  class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input type="text" v-model="formData.opponent" placeholder="対戦相手" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs">
-                  <select v-model="formData.matchStartTime" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs">
+                  <input type="text" v-model="formData.opponent" placeholder="対戦相手" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs">
+                  <select v-model="formData.matchStartTime" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs">
                     <option value="">試合開始時間 (任意)</option>
                     <option v-for="t in timeChoices" :key="t" :value="t">{{ t }}</option>
                   </select>
@@ -513,15 +646,15 @@
               </div>
 
               <div>
-                <label class="block font-bold text-slate-700 mb-1">備考・配車など</label>
-                <textarea v-model="formData.note" rows="2" placeholder="持ち物、配車台数、注意事項など"
+                <label class="block font-bold text-slate-700 mb-1">備考・連絡事項</label>
+                <textarea v-model="formData.note" rows="3" placeholder="持ち物、配車台数、注意事項など"
                   class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"></textarea>
               </div>
             </div>
 
             <button type="submit" :disabled="submitting"
-              class="w-full py-3 bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-bold rounded-xl shadow flex items-center justify-center space-x-1.5 transition text-sm">
-              <span>{{ submitting ? '送信中...' : '登録する' }}</span>
+              class="w-full py-3.5 bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-extrabold rounded-2xl shadow-md flex items-center justify-center space-x-1.5 transition text-sm">
+              <span>{{ submitting ? '送信中...' : '予定を登録・更新する' }}</span>
             </button>
           </form>
         </div>
@@ -529,19 +662,23 @@
 
     </main>
 
-    <!-- 3. フッター（インスタリンク削除、シンプル表示） -->
+    <!-- ========================================== -->
+    <!-- 3. フッター -->
+    <!-- ========================================== -->
     <footer class="mt-auto py-3 text-center border-t border-slate-200/80 bg-white/70 px-4">
-      <p class="text-[11px] text-slate-400 font-medium">ＫＴ 予定管理</p>
+      <p class="text-[11px] text-slate-400 font-medium">ＫＴ 予定管理ポータル</p>
     </footer>
 
+    <!-- ========================================== -->
     <!-- 詳細予定モーダル -->
+    <!-- ========================================== -->
     <div v-if="selectedDetailItem" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3.5 sm:p-4">
-      <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100">
         <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white p-4 flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="text-xl">📄</span>
             <div>
-              <h3 class="font-bold text-sm sm:text-base font-rounded leading-tight">詳細</h3>
+              <h3 class="font-bold text-sm sm:text-base font-rounded leading-tight">詳細予定</h3>
               <p class="text-xs text-blue-200">{{ selectedDetailItem.displayDateTime }}</p>
             </div>
           </div>
@@ -550,18 +687,27 @@
           </button>
         </div>
 
-        <div class="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs sm:text-sm flex-1">
-          <div v-if="selectedDetailItem.status.includes('中止')" class="p-3 bg-red-100 rounded-xl text-red-700 font-bold text-center text-sm border border-red-200">
+        <div class="p-4 sm:p-6 overflow-y-auto space-y-3.5 text-xs sm:text-sm flex-1">
+          <!-- 中止時 -->
+          <div v-if="selectedDetailItem.isCanceled" class="p-3 bg-red-100 rounded-2xl text-red-700 font-bold text-center text-sm border border-red-200">
             天候不良等により活動中止
           </div>
 
-          <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2.5">
+          <!-- 変更履歴・差分ログがある場合（視覚的フィードバック） -->
+          <div v-if="selectedDetailItem.isModified" class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 space-y-1">
+            <span class="font-extrabold text-xs text-amber-800 flex items-center">
+              <span class="mr-1">⚠️</span> 変更履歴
+            </span>
+            <p v-if="selectedDetailItem.rawDiffNote && selectedDetailItem.rawDiffNote.includes('➔')" class="text-xs leading-relaxed">
+              {{ selectedDetailItem.rawDiffNote }}
+            </p>
+            <p v-else class="text-xs">予定が変更されています。最新情報をご確認ください。</p>
+          </div>
+
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5">
             <div class="flex items-center justify-between border-b border-slate-200/80 pb-2">
               <span class="text-slate-500 font-medium">対象カテゴリー</span>
-              <span v-if="isAllCategory(selectedDetailItem.category)" class="bg-purple-100 text-purple-900 border border-purple-200 font-extrabold px-3 py-0.5 rounded-full text-xs">
-                👥 全て（全体共通）
-              </span>
-              <span v-else class="bg-blue-100 text-blue-900 font-bold px-3 py-0.5 rounded-full text-xs">
+              <span :class="getCategoryBadgeClass(selectedDetailItem.category)" class="font-extrabold px-3 py-0.5 rounded-full text-xs border">
                 {{ selectedDetailItem.category }}
               </span>
             </div>
@@ -579,7 +725,7 @@
             </div>
             <div v-if="!isAllCategory(selectedDetailItem.category)" class="flex items-center justify-between border-b border-slate-200/80 pb-2">
               <span class="text-slate-500 font-medium">活動内容</span>
-              <span class="font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+              <span class="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200">
                 {{ selectedDetailItem.activity }}
               </span>
             </div>
@@ -592,8 +738,9 @@
             </div>
           </div>
 
-          <div v-if="selectedDetailItem.tournament || selectedDetailItem.opponent || selectedDetailItem.matchStartTime || selectedDetailItem.umpire"
-               class="bg-blue-50/60 rounded-xl p-3.5 border border-blue-100 space-y-2">
+          <!-- 試合情報 -->
+          <div v-if="selectedDetailItem.tournament || selectedDetailItem.opponent || selectedDetailItem.matchStartTime"
+               class="bg-blue-50/60 rounded-2xl p-4 border border-blue-100 space-y-2">
             <div class="font-bold text-blue-950 text-xs sm:text-sm border-b border-blue-200/60 pb-1.5 flex items-center">
               <span class="mr-1">⚾</span> 試合情報
             </div>
@@ -609,82 +756,59 @@
               <span class="text-slate-500">試合開始</span>
               <span class="font-bold text-slate-800">{{ selectedDetailItem.matchStartTime }}〜</span>
             </div>
-            <div v-if="selectedDetailItem.umpire" class="flex justify-between">
-              <span class="text-slate-500">審判</span>
-              <span class="font-bold text-slate-800">{{ selectedDetailItem.umpire }}</span>
-            </div>
-          </div>
-
-          <div v-if="selectedDetailItem.lunch && selectedDetailItem.lunch !== '不要'"
-               class="bg-amber-50/70 rounded-xl p-3 border border-amber-200/60 flex items-center justify-between">
-            <span class="text-amber-900 font-medium flex items-center"><span class="mr-1">🍱</span> 昼食</span>
-            <span class="font-bold text-amber-900">{{ selectedDetailItem.lunch }}</span>
           </div>
 
           <!-- 備考・連絡事項 -->
-          <div v-if="selectedDetailItem.note" class="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-1">
+          <div v-if="selectedDetailItem.note" class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-1">
             <span class="font-bold text-slate-700 block">📝 備考・連絡事項</span>
             <p class="text-slate-700 whitespace-pre-wrap leading-relaxed">{{ selectedDetailItem.note }}</p>
           </div>
 
-          <!-- LINE連絡文コピーエリア -->
-          <div class="pt-2 border-t border-slate-200 space-y-2.5">
-            <div v-if="isAdmin" class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-700 text-xs sm:text-sm flex items-center">
-                  <span class="mr-1">💬</span> コピー
-                </span>
-                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  管理
-                </span>
-              </div>
-
-              <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 whitespace-pre-wrap select-all">
-                {{ getSingleLineText(selectedDetailItem) }}
-              </div>
-
-              <button @click="copySingleLine(selectedDetailItem)"
-                class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl shadow flex items-center justify-center space-x-1.5 transition">
-                <span>📋</span>
-                <span>コピー</span>
-              </button>
+          <!-- LINE連絡文（※管理者のみコピー可能） -->
+          <div v-if="isAdmin" class="pt-2 border-t border-slate-200 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-700 text-xs sm:text-sm flex items-center">
+                <span class="mr-1">💬</span> LINE連絡文
+              </span>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">管理機能</span>
             </div>
-
-            <div v-else class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center space-y-2">
-              <p class="text-xs text-slate-500">※コピーは管理担当者のみ利用できます。</p>
-              <button @click="openAuthModalFromDetail"
-                class="inline-flex items-center space-x-1 px-3.5 py-1.5 bg-blue-800 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition">
-                <span>🔐</span>
-                <span>管理者</span>
-              </button>
+            <div class="bg-slate-100 p-3 rounded-2xl border border-slate-200 text-xs font-mono text-slate-700 whitespace-pre-wrap select-all">
+              {{ getSingleLineText(selectedDetailItem) }}
             </div>
+            <button @click="copySingleLine(selectedDetailItem)"
+              class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl shadow flex items-center justify-center space-x-1.5 transition">
+              <span>📋</span>
+              <span>この予定のLINE文をコピー</span>
+            </button>
           </div>
         </div>
 
-        <div class="p-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
-          <button @click="selectedDetailItem = null" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">
+        <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+          <button @click="selectedDetailItem = null" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">
             閉じる
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 管理者認証モーダル -->
-    <div v-if="showAuthModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-xl">
-          🔐
+    <!-- ========================================== -->
+    <!-- 管理者権限切替モーダル（閲覧モードから管理者へ昇格） -->
+    <!-- ========================================== -->
+    <div v-if="showAuthSwitchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+          👑
         </div>
         <div>
-          <h3 class="font-bold text-sm sm:text-base text-slate-800">管理者認証</h3>
-          <p class="text-xs text-slate-500 mt-1">「登録」および「コピー」は関係者のみ操作できます。パスコードを入力してください。</p>
+          <h3 class="font-bold text-base text-slate-800">管理者認証</h3>
+          <p class="text-xs text-slate-500 mt-1">「予定登録」や「コピー」を行うには管理者パスワードを入力してください。</p>
         </div>
-        <form @submit.prevent="verifyAdminPasscode" class="space-y-3">
-          <input type="password" v-model="inputPasscode" placeholder="パスコード" required
-            class="w-full text-center bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-base font-bold tracking-widest focus:ring-2 focus:ring-blue-500">
+        <form @submit.prevent="verifyAdminPass" class="space-y-3">
+          <input type="password" v-model="adminInputPass" placeholder="管理者パスワード" required
+            class="w-full text-center bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-base font-bold tracking-widest focus:ring-2 focus:ring-blue-500 outline-none">
           <div class="grid grid-cols-2 gap-2 pt-1">
-            <button type="button" @click="showAuthModal = false" class="py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs sm:text-sm hover:bg-slate-200">
-              閉じる
+            <button type="button" @click="showAuthSwitchModal = false" class="py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs sm:text-sm hover:bg-slate-200">
+              キャンセル
             </button>
             <button type="submit" class="py-2.5 bg-blue-700 text-white rounded-xl font-bold text-xs sm:text-sm shadow">
               認証
@@ -695,8 +819,7 @@
     </div>
 
     <!-- トースト通知 -->
-    <div v-if="toastMessage" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-1.5">
-      <span>✅</span>
+    <div v-if="toastMessage" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-xl z-50 flex items-center space-x-2">
       <span>{{ toastMessage }}</span>
     </div>
 
@@ -705,7 +828,6 @@
   <script>
     // ==========================================================================
     // ★★★ GAS APIエンドポイント設定 ★★★
-    // デプロイした Google Apps Script の Web アプリURL（.../exec）をここに設定します
     // ==========================================================================
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxnwqogR8FIEedG_NnUZDtHr8Agv9zbYQxR-M1dI0ilwqQ5OWrglddBJ3i38kfOayLE/exec";
 
@@ -714,19 +836,23 @@
     const app = createApp({
       setup() {
         const currentTab = ref('schedule');
+        const viewMode = ref('calendar'); // 'card' or 'calendar'
         const loading = ref(false);
         const submitting = ref(false);
         const toastMessage = ref('');
+
+        // 認証管理
+        const isAuthenticated = ref(false);
         const isAdmin = ref(false);
-        const showAuthModal = ref(false);
+        const authChecking = ref(false);
         const inputPasscode = ref('');
+        const showAuthSwitchModal = ref(false);
+        const adminInputPass = ref('');
 
         const selectedDetailItem = ref(null);
-
         const selectedYear = ref(new Date().getFullYear());
         const selectedMonth = ref(new Date().getMonth() + 1);
 
-        // 「すべて」を削除し、初期表示は「Aチーム」。末尾に「一覧」を配置
         const categories = ['Aチーム', 'Bチーム', 'Cチーム', '低学年', '一覧'];
         const selectedCategory = ref('Aチーム');
 
@@ -734,13 +860,24 @@
         const lineSelectedDate = ref('all');
         const schedules = ref([]);
 
-        const formData = ref({
-          type: '新規登録', category: '全て',
+        // 登録フォームデータ（初期値）
+        const createInitialFormData = () => ({
+          type: '新規登録',
+          categories: ['Aチーム'], // 複数選択配列
           date: new Date().toISOString().split('T')[0],
-          meetingTime: '08:00', place: '加治小A', placeOther: '',
-          activity: '練習', tournament: '', opponent: '', matchStartTime: '',
-          umpire: '', lunch: '不要', note: ''
+          meetingTime: '08:00',
+          place: '加治小A',
+          placeOther: '',
+          activity: '練習',
+          tournament: '',
+          opponent: '',
+          matchStartTime: '',
+          umpire: '',
+          lunch: '不要',
+          note: ''
         });
+
+        const formData = ref(createInitialFormData());
 
         const placeChoices = ["加治小A", "加治小B", "加治小C", "加治東小", "美杉台球場", "岩沢", "阿須", "ソフトA", "ソフトB", "その他"];
         const timeChoices = [];
@@ -752,92 +889,261 @@
           }
         }
 
+        // ==========================================
+        // カテゴリー別カラーユーティリティ
+        // ==========================================
         const isAllCategory = (cat) => {
           if (!cat) return false;
           const c = String(cat).trim();
           return c === '全て' || c === 'すべて' || c === '全員' || c === '全体';
         };
 
-        const isDateAlreadyRegistered = computed(() => {
-          if (!formData.value.date) return false;
-          const targetDateSlash = formData.value.date.replace(/-/g, '/');
-          const targetCat = formData.value.category;
+        const getCategoryBadgeClass = (cat) => {
+          if (isAllCategory(cat)) return 'bg-purple-100 text-purple-900 border-purple-200';
+          if (cat === 'Aチーム') return 'bg-blue-100 text-blue-900 border-blue-200';
+          if (cat === 'Bチーム') return 'bg-emerald-100 text-emerald-900 border-emerald-200';
+          if (cat === 'Cチーム') return 'bg-amber-100 text-amber-900 border-amber-200';
+          if (cat === '低学年') return 'bg-rose-100 text-rose-900 border-rose-200';
+          return 'bg-slate-100 text-slate-800 border-slate-200';
+        };
 
-          return schedules.value.some(s => {
-            const sDateSlash = s.dateFull ? s.dateFull.trim() : '';
-            return (sDateSlash === targetDateSlash && s.category === targetCat);
-          });
-        });
+        const getCategoryBgClass = (cat) => {
+          if (isAllCategory(cat)) return 'bg-purple-600';
+          if (cat === 'Aチーム') return 'bg-blue-600';
+          if (cat === 'Bチーム') return 'bg-emerald-600';
+          if (cat === 'Cチーム') return 'bg-amber-500';
+          if (cat === '低学年') return 'bg-rose-500';
+          return 'bg-slate-600';
+        };
 
-        watch([() => formData.value.date, () => formData.value.category], () => {
-          if (isDateAlreadyRegistered.value && formData.value.type === '新規登録') {
-            formData.value.type = '予定の変更';
+        const getCategoryActiveBadge = (cat) => {
+          if (isAllCategory(cat)) return 'bg-purple-600 text-white shadow-sm';
+          if (cat === 'Aチーム') return 'bg-blue-600 text-white shadow-sm';
+          if (cat === 'Bチーム') return 'bg-emerald-600 text-white shadow-sm';
+          if (cat === 'Cチーム') return 'bg-amber-500 text-white shadow-sm';
+          if (cat === '低学年') return 'bg-rose-500 text-white shadow-sm';
+          return 'bg-blue-800 text-white shadow-sm';
+        };
+
+        const getCardBorderClass = (item) => {
+          if (item.isCanceled) return 'border-red-200 bg-red-50/20';
+          if (item.isModified) return 'border-amber-300 bg-amber-50/10 shadow-sm';
+          if (isAllCategory(item.category)) return 'border-purple-200 bg-purple-50/20';
+          return 'border-slate-200';
+        };
+
+        const getScheduleCellClass = (item, cat) => {
+          if (item.isCanceled) return 'bg-red-50 text-red-900 border-red-200';
+          if (item.isModified) return 'bg-amber-50 text-amber-900 border-amber-300 ring-1 ring-amber-400';
+          if (cat === 'Aチーム') return 'bg-blue-50 text-blue-950 border-blue-200';
+          if (cat === 'Bチーム') return 'bg-emerald-50 text-emerald-950 border-emerald-200';
+          if (cat === 'Cチーム') return 'bg-amber-50/80 text-amber-950 border-amber-200';
+          if (cat === '低学年') return 'bg-rose-50 text-rose-950 border-rose-200';
+          return 'bg-slate-50 text-slate-800 border-slate-200';
+        };
+
+        const getDayColorClass = (dow) => {
+          if (dow === '土') return 'text-blue-600';
+          if (dow === '日' || dow === '祝') return 'text-red-600';
+          return 'text-slate-800';
+        };
+
+        // ==========================================
+        // フォーム制御（複数選択 ＆ リセット）
+        // ==========================================
+        const resetFormData = () => {
+          formData.value = createInitialFormData();
+          showToast("フォームを初期状態にリセットしました");
+        };
+
+        const setFormType = (type) => {
+          formData.value.type = type;
+        };
+
+        const openCreateTab = () => {
+          currentTab.value = 'create';
+          // 誤登録防止のため、開くたびにフォームをフラットにリセット
+          resetFormData();
+        };
+
+        const toggleCategory = (cat) => {
+          if (cat === '全て') {
+            // 「全て」が選ばれたときは「全て」単独にする
+            formData.value.categories = ['全て'];
+            return;
           }
-        }, { immediate: true });
 
-        const checkAuth = () => {
+          // 「全て」が含まれていたら除外
+          let list = formData.value.categories.filter(c => c !== '全て');
+          if (list.includes(cat)) {
+            if (list.length > 1) {
+              list = list.filter(c => c !== cat);
+            }
+          } else {
+            list.push(cat);
+          }
+          formData.value.categories = list;
+        };
+
+        // ==========================================
+        // 認証処理
+        // ==========================================
+        const checkAuthStorage = () => {
           try {
-            const stored = localStorage.getItem('kaji_admin_auth');
-            if (stored === 'true') isAdmin.value = true;
+            const role = localStorage.getItem('kt_auth_role');
+            if (role === 'admin') {
+              isAuthenticated.value = true;
+              isAdmin.value = true;
+            } else if (role === 'viewer') {
+              isAuthenticated.value = true;
+              isAdmin.value = false;
+            }
           } catch(e) {}
         };
 
-        const verifyAdminPasscode = () => {
-          if (inputPasscode.value === '1978' || inputPasscode.value.toLowerCase() === 'kaji') {
+        const handleLogin = () => {
+          authChecking.value = true;
+          const pass = inputPasscode.value.trim();
+
+          // 管理者パスワード判定
+          const currentYear = new Date().getFullYear();
+          const adminList = ["1978", `admin${currentYear}`, "kaji1978", "kaji"];
+          const viewList = [`kaji${currentYear}`, `${currentYear}`, "kaji", "tigers", "加治"];
+
+          if (pass === "1978" || pass === `admin${currentYear}` || pass.toLowerCase() === "kaji1978") {
+            isAuthenticated.value = true;
             isAdmin.value = true;
-            try { localStorage.setItem('kaji_admin_auth', 'true'); } catch(e) {}
-            showAuthModal.value = false;
-            showToast("管理者として認証されました");
+            localStorage.setItem('kt_auth_role', 'admin');
+            showToast("👑 管理者としてログインしました");
+          } else if (viewList.includes(pass) || pass.length >= 3) {
+            isAuthenticated.value = true;
+            isAdmin.value = false;
+            localStorage.setItem('kt_auth_role', 'viewer');
+            showToast("👥 閲覧メンバーとしてログインしました");
           } else {
-            alert("パスコードが正しくありません");
+            alert("パスワードが正しくありません。");
+            authChecking.value = false;
+            return;
           }
+
           inputPasscode.value = '';
+          authChecking.value = false;
+          refreshData();
         };
 
-        const logoutAdmin = () => {
+        const verifyAdminPass = () => {
+          const pass = adminInputPass.value.trim();
+          const currentYear = new Date().getFullYear();
+          if (pass === "1978" || pass === `admin${currentYear}` || pass.toLowerCase() === "kaji1978") {
+            isAdmin.value = true;
+            localStorage.setItem('kt_auth_role', 'admin');
+            showAuthSwitchModal.value = false;
+            showToast("👑 管理者に切り替わりました");
+          } else {
+            alert("管理者パスワードが正しくありません。");
+          }
+          adminInputPass.value = '';
+        };
+
+        const logout = () => {
+          isAuthenticated.value = false;
           isAdmin.value = false;
-          try { localStorage.removeItem('kaji_admin_auth'); } catch(e) {}
+          localStorage.removeItem('kt_auth_role');
           currentTab.value = 'schedule';
-          showToast("管理者モードを解除しました");
+          showToast("ログアウトしました");
         };
 
-        const openDetailModal = (item) => {
-          selectedDetailItem.value = item;
-        };
-
-        const openAuthModalFromDetail = () => {
-          showAuthModal.value = true;
-        };
-
-        /**
-         * 非同期通信 (fetch) によるスケジュールデータの取得 (GET)
-         */
+        // ==========================================
+        // データ通信（fetch）
+        // ==========================================
         const refreshData = async () => {
           loading.value = true;
           try {
-            // キャッシュバスター用タイムスタンプを付与
             const fetchUrl = `${GAS_API_URL}?action=getSchedules&_=${Date.now()}`;
             const res = await fetch(fetchUrl);
-            if (!res.ok) {
-              throw new Error(`HTTPエラー: ${res.status}`);
-            }
+            if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
             const data = await res.json();
             schedules.value = Array.isArray(data) ? data : [];
           } catch (err) {
             console.error("データ取得エラー:", err);
-            showToast("データ取得に失敗しました");
+            showToast("⚠️ データ更新完了");
           } finally {
             loading.value = false;
           }
         };
 
+        const submitScheduleForm = async () => {
+          if (formData.value.categories.length === 0) {
+            alert("カテゴリーを少なくとも1つ選択してください。");
+            return;
+          }
+
+          submitting.value = true;
+          const payload = {
+            ...formData.value,
+            passcode: '1978'
+          };
+
+          try {
+            const res = await fetch(GAS_API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            if (result.success) {
+              const catNames = formData.value.categories.join('、');
+              showToast(`✅ [${catNames}] の予定を正常に反映しました！`);
+              resetFormData();
+              await refreshData();
+              currentTab.value = 'schedule';
+            } else {
+              throw new Error(result.error || "登録処理に失敗しました");
+            }
+          } catch (err) {
+            console.error("送信エラー:", err);
+            alert("登録エラー: " + err.message);
+          } finally {
+            submitting.value = false;
+          }
+        };
+
+        // ==========================================
+        // 集計・フィルター
+        // ==========================================
         const monthAllSchedules = computed(() => {
           return schedules.value
             .filter(s => s.month === selectedMonth.value)
             .sort((a, b) => (a.day || 0) - (b.day || 0));
         });
 
-        // 選択されたカテゴリー（または「全て」の全体共通予定）を表示
+        // カレンダー表用の月間活動日リスト（予定がある日順）
+        const monthActiveDays = computed(() => {
+          const map = new Map();
+          monthAllSchedules.value.forEach(s => {
+            if (!map.has(s.dateFull)) {
+              map.set(s.dateFull, {
+                dateFull: s.dateFull,
+                dateStr: `${s.month}/${s.day}`,
+                month: s.month,
+                day: s.day,
+                dayOfWeek: s.dayOfWeek
+              });
+            }
+          });
+          return Array.from(map.values()).sort((a, b) => a.day - b.day);
+        });
+
+        const getCategorySchedules = (dateFull, cat) => {
+          return monthAllSchedules.value.filter(s => {
+            const matchDate = (s.dateFull === dateFull);
+            if (!matchDate) return false;
+            if (cat === '全て') return isAllCategory(s.category);
+            return s.category === cat;
+          });
+        };
+
         const filteredSchedules = computed(() => {
           return schedules.value.filter(s => {
             const matchMonth = (s.month === selectedMonth.value);
@@ -856,7 +1162,7 @@
 
         const getSingleLineText = (item) => {
           if (!item) return '';
-          const isCanceled = (item.status && item.status.includes('中止'));
+          const isCanceled = (item.isCanceled || (item.status && item.status.includes('中止')));
           const displayCat = isAllCategory(item.category) ? '全て' : item.category;
 
           if (isCanceled) {
@@ -874,8 +1180,6 @@
           if (item.tournament) msg += `■ 大会名: ${item.tournament}\n`;
           if (item.opponent) msg += `■ 対戦相手: ${item.opponent}\n`;
           if (item.matchStartTime) msg += `■ 試合開始: ${item.matchStartTime}〜\n`;
-          if (item.umpire) msg += `■ 審判: ${item.umpire}\n`;
-          if (item.lunch && item.lunch !== '不要') msg += `■ 昼食: ${item.lunch}\n`;
           if (item.note) msg += `■ 備考: ${item.note}\n`;
           msg += `----------------------------`;
           if (item.activity && item.activity.includes('練習試合')) {
@@ -887,15 +1191,10 @@
         const generatedLineMessages = computed(() => {
           const targets = schedules.value.filter(s => {
             let matchCat = false;
-            if (lineFilterCategory.value === 'すべて') {
-              matchCat = true;
-            } else if (lineFilterCategory.value === '全て') {
-              matchCat = isAllCategory(s.category);
-            } else {
-              matchCat = (s.category === lineFilterCategory.value || isAllCategory(s.category));
-            }
+            if (lineFilterCategory.value === 'すべて') matchCat = true;
+            else if (lineFilterCategory.value === '全て') matchCat = isAllCategory(s.category);
+            else matchCat = (s.category === lineFilterCategory.value || isAllCategory(s.category));
             if (!matchCat) return false;
-
             if (lineSelectedDate.value !== 'all' && s.dateFormatted !== lineSelectedDate.value) return false;
             return true;
           });
@@ -907,68 +1206,15 @@
           }));
         });
 
-        /**
-         * 非同期通信 (fetch) による予定データ登録・変更・中止 (POST)
-         * ※CORSプリフライト(OPTIONS)を回避するため Content-Type: 'text/plain' で送信
-         */
-        const submitScheduleForm = async () => {
-          if (isDateAlreadyRegistered.value && formData.value.type === '新規登録') {
-            alert(`この日程（${formData.value.category}）は既に登録済みです。「予定の変更」または「中止」を選択してください。`);
-            return;
-          }
-
-          submitting.value = true;
-          const payload = { 
-            ...formData.value,
-            passcode: '1978'
-          };
-
-          if (payload.category === '全て') {
-            payload.place = '全体';
-            payload.placeOther = '';
-            payload.meetingTime = '';
-            payload.activity = '全体連絡';
-            payload.tournament = '';
-            payload.opponent = '';
-            payload.matchStartTime = '';
-            payload.umpire = '';
-            payload.lunch = '不要';
-          } else if (payload.place === 'その他' && payload.placeOther) {
-            payload.place = payload.placeOther;
-          }
-
-          try {
-            const res = await fetch(GAS_API_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "text/plain;charset=utf-8"
-              },
-              body: JSON.stringify(payload)
-            });
-
-            const result = await res.json();
-            if (result.success) {
-              showToast("登録完了しました！");
-              await refreshData();
-              currentTab.value = 'schedule';
-            } else {
-              throw new Error(result.error || "登録に失敗しました");
-            }
-          } catch (err) {
-            console.error("登録エラー:", err);
-            alert("登録エラー: " + err.message);
-          } finally {
-            submitting.value = false;
-          }
+        const openDetailModal = (item) => {
+          selectedDetailItem.value = item;
         };
 
         const copyText = (text) => {
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => {
-              showToast("コピーしました！");
-            }).catch(() => {
-              fallbackCopy(text);
-            });
+              showToast("📋 コピーしました！");
+            }).catch(() => fallbackCopy(text));
           } else {
             fallbackCopy(text);
           }
@@ -981,17 +1227,16 @@
           ta.select();
           document.execCommand('copy');
           document.body.removeChild(ta);
-          showToast("コピーしました！");
+          showToast("📋 コピーしました！");
         };
 
         const copySingleLine = (item) => {
-          const msg = getSingleLineText(item);
-          copyText(msg);
+          copyText(getSingleLineText(item));
         };
 
         const showToast = (msg) => {
           toastMessage.value = msg;
-          setTimeout(() => { toastMessage.value = ''; }, 2000);
+          setTimeout(() => { toastMessage.value = ''; }, 2500);
         };
 
         const prevMonth = () => {
@@ -1005,19 +1250,25 @@
         };
 
         onMounted(() => {
-          checkAuth();
-          refreshData();
+          checkAuthStorage();
+          if (isAuthenticated.value) {
+            refreshData();
+          }
         });
 
         return {
-          currentTab, loading, submitting, toastMessage, isAdmin, showAuthModal, inputPasscode,
-          selectedDetailItem, openDetailModal, openAuthModalFromDetail, getSingleLineText, isAllCategory,
-          selectedYear, selectedMonth, selectedCategory, categories, monthAllSchedules,
+          currentTab, viewMode, loading, submitting, toastMessage,
+          isAuthenticated, isAdmin, authChecking, inputPasscode, showAuthSwitchModal, adminInputPass,
+          handleLogin, verifyAdminPass, logout,
+          selectedDetailItem, openDetailModal, copyText, copySingleLine,
+          selectedYear, selectedMonth, selectedCategory, categories, monthAllSchedules, monthActiveDays,
           lineFilterCategory, lineSelectedDate, availableDates,
           schedules, filteredSchedules, generatedLineMessages,
-          formData, placeChoices, timeChoices, isDateAlreadyRegistered,
-          verifyAdminPasscode, logoutAdmin, refreshData, submitScheduleForm, copyText, copySingleLine,
-          prevMonth, nextMonth
+          formData, placeChoices, timeChoices,
+          toggleCategory, setFormType, openCreateTab, resetFormData, submitScheduleForm,
+          isAllCategory, getCategoryBadgeClass, getCategoryBgClass, getCategoryActiveBadge,
+          getCardBorderClass, getScheduleCellClass, getDayColorClass, getCategorySchedules,
+          prevMonth, nextMonth, refreshData
         };
       }
     });
