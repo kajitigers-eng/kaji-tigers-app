@@ -2,13 +2,25 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ＫＴ 予定管理</title>
-  
+  <meta name="description" content="加治タイガースの予定管理ポータル。A・B・Cチームと低学年の練習・試合予定、カレンダー、LINE連絡文を管理できます。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ＫＴ 予定管理 | 加治タイガース">
+  <meta property="og:description" content="加治タイガースの予定管理ポータル。A・B・Cチームと低学年の練習・試合予定、カレンダー、LINE連絡文を管理できます。">
+  <meta property="og:url" content="https://kajitigers-eng.github.io/kaji-tigers-app/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%BE%3C/text%3E%3C/svg%3E">
+  <meta name="theme-color" content="#1e3a8a">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="dns-prefetch" href="https://script.google.com">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js" as="script">
+
   <!-- スタイルシート & Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Vue 3 -->
+  <!-- Vue 3 (安定CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
   <script>
     if (typeof Vue === 'undefined') {
@@ -16,16 +28,14 @@
     }
   </script>
 
-  <!-- html2pdf.js（PDF保存機能） -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   
   <style>
-    [v-cloak] { display: none !important; }
+    /* Vueマウント前のチラつき防止（真っ白化を防ぐセーフティ付き） */
+    [v-cloak] { opacity: 0; }
     body {
       font-family: 'Noto Sans JP', sans-serif;
       -webkit-tap-highlight-color: transparent;
@@ -37,28 +47,12 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* カレンダー表の列固定用スタイル */
-    .sticky-col-header {
-      position: sticky;
-      left: 0;
-      z-index: 20;
-      background-color: #f1f5f9; /* slate-100 */
-      box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.15);
-    }
-    .sticky-col-cell {
-      position: sticky;
-      left: 0;
-      z-index: 10;
-      background-color: #f8fafc; /* slate-50 */
-      box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.15);
-    }
-
     /* 印刷/PDF保存用スタイル */
     @media print {
       body { background: white !important; }
       header, nav, .no-print { display: none !important; }
-      #calendar-pdf-target { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
-      .sticky-col-header, .sticky-col-cell { position: static !important; box-shadow: none !important; }
+      .calendar-scroll-container { max-height: none !important; overflow: visible !important; border: 1px solid #cbd5e1 !important; }
+      th, td { position: static !important; box-shadow: none !important; }
     }
   </style>
 </head>
@@ -202,17 +196,17 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-sm no-print">
           <!-- 表示モード切替トグル -->
           <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-bold w-fit">
-            <button @click="viewMode = 'card'"
-              :class="viewMode === 'card' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
-              class="px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
-              <span>🗂️</span>
-              <span>カード</span>
-            </button>
             <button @click="viewMode = 'calendar'"
               :class="viewMode === 'calendar' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
               class="px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
               <span>📅</span>
               <span>カレンダー表</span>
+            </button>
+            <button @click="viewMode = 'card'"
+              :class="viewMode === 'card' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+              class="px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
+              <span>🗂️</span>
+              <span>カード</span>
             </button>
           </div>
 
@@ -243,51 +237,70 @@
           </div>
 
           <!-- ============================================== -->
-          <!-- ビュー1: カレンダー表（横軸：カテゴリー、縦軸：日付） -->
+          <!-- ビュー1: カレンダー表（★行列固定ウィンドウ枠＆タップで詳細） -->
           <!-- ============================================== -->
           <div v-else-if="viewMode === 'calendar'" class="space-y-2">
             <div id="calendar-pdf-target" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              
               <!-- カレンダー表ヘッダーバー -->
               <div class="p-3 sm:p-4 bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center space-x-2">
                   <span class="text-lg">📅</span>
-                  <span class="font-bold text-sm sm:text-base font-rounded">{{ selectedYear }}年 {{ selectedMonth }}月 予定カレンダー</span>
+                  <span class="font-bold text-sm sm:text-base font-rounded">{{ selectedYear }}年 {{ selectedMonth }}月 チーム別予定カレンダー</span>
                 </div>
                 
-                <!-- 操作ボタン群（PDF保存 & タップで詳細バッジ） -->
+                <!-- 操作ボタン群（PDF保存 & 案内） -->
                 <div class="flex items-center space-x-2 no-print">
                   <button @click="downloadCalendarPDF"
-                    class="flex items-center space-x-1 px-3 py-1 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-sm transition">
+                    class="flex items-center space-x-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow transition">
                     <span>📥</span>
                     <span>PDF保存</span>
                   </button>
-                  <span class="text-[11px] sm:text-xs bg-blue-800/90 px-3 py-1 rounded-full text-blue-100 font-bold border border-blue-600/50">
-                    タップで詳細
+                  <span class="text-[11px] bg-blue-800/90 px-3 py-1.5 rounded-full text-blue-100 font-bold border border-blue-600/50 flex items-center">
+                    <span class="mr-1">👆</span>
+                    <span>予定タップで詳細表示</span>
                   </span>
                 </div>
               </div>
 
-              <!-- マトリクス形式カレンダー（日程列固定 ＆ 横スクロール対応） -->
-              <div class="overflow-x-auto relative shadow-inner">
-                <table class="w-full text-left border-collapse min-w-[760px]">
-                  <thead>
-                    <tr class="text-xs font-extrabold text-slate-700 border-b border-slate-200">
-                      <!-- 日程列ヘッダー（左固定） -->
-                      <th class="sticky-col-header py-3 px-2 text-center w-20 min-w-[80px] max-w-[80px] border-r border-slate-300">
+              <!-- ★★★ 行列固定スクロールテーブルコンテナ ★★★ -->
+              <!-- 縦スクロールでヘッダー（日程・A・B・C・低学年・全体共通）が上部固定 -->
+              <!-- 横スクロールで日程列が左部固定 -->
+              <div class="calendar-scroll-container max-h-[72vh] overflow-auto relative border-t border-slate-200 bg-white">
+                <table class="w-full text-left border-separate border-spacing-0 min-w-[780px]">
+                  
+                  <!-- テーブルヘッダー（縦スクロールで上端固定 sticky top-0） -->
+                  <thead class="sticky top-0 z-30">
+                    <tr>
+                      <!-- 左上角セル：日程（縦横両方固定 sticky top-0 left-0 z-40） -->
+                      <th class="sticky top-0 left-0 z-40 bg-slate-200 text-slate-800 text-xs font-black py-3 px-2 text-center w-20 min-w-[85px] max-w-[85px] border-b-2 border-r-2 border-slate-300 shadow-[2px_2px_4px_rgba(0,0,0,0.1)]">
                         日程
                       </th>
-                      <th class="py-3 px-2 text-center text-blue-900 bg-blue-50/70 border-r border-slate-200 w-36 min-w-[135px]">Aチーム</th>
-                      <th class="py-3 px-2 text-center text-emerald-900 bg-emerald-50/70 border-r border-slate-200 w-36 min-w-[135px]">Bチーム</th>
-                      <th class="py-3 px-2 text-center text-amber-900 bg-amber-50/70 border-r border-slate-200 w-36 min-w-[135px]">Cチーム</th>
-                      <th class="py-3 px-2 text-center text-rose-900 bg-rose-50/70 border-r border-slate-200 w-36 min-w-[135px]">低学年</th>
-                      <th class="py-3 px-2 text-center text-purple-900 bg-purple-50/70 w-36 min-w-[140px]">👥 全体共通</th>
+                      <!-- 各チーム列ヘッダー（上端固定 sticky top-0 z-30） -->
+                      <th class="sticky top-0 z-30 bg-blue-100 text-blue-950 text-xs font-black py-3 px-2 text-center border-b-2 border-r border-slate-300 min-w-[135px]">
+                        Aチーム
+                      </th>
+                      <th class="sticky top-0 z-30 bg-emerald-100 text-emerald-950 text-xs font-black py-3 px-2 text-center border-b-2 border-r border-slate-300 min-w-[135px]">
+                        Bチーム
+                      </th>
+                      <th class="sticky top-0 z-30 bg-amber-100 text-amber-950 text-xs font-black py-3 px-2 text-center border-b-2 border-r border-slate-300 min-w-[135px]">
+                        Cチーム
+                      </th>
+                      <th class="sticky top-0 z-30 bg-rose-100 text-rose-950 text-xs font-black py-3 px-2 text-center border-b-2 border-r border-slate-300 min-w-[135px]">
+                        低学年
+                      </th>
+                      <th class="sticky top-0 z-30 bg-purple-100 text-purple-950 text-xs font-black py-3 px-2 text-center border-b-2 border-slate-300 min-w-[140px]">
+                        👥 全体共通
+                      </th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 text-xs">
-                    <tr v-for="dayObj in monthActiveDays" :key="dayObj.dateFull" class="hover:bg-slate-50/60 transition">
+
+                  <!-- テーブルボディ -->
+                  <tbody class="text-xs">
+                    <tr v-for="dayObj in monthActiveDays" :key="dayObj.dateFull" class="hover:bg-slate-50/70 transition">
                       
-                      <!-- 日付・曜日セル（左固定） -->
-                      <td class="sticky-col-cell py-3 px-2 text-center whitespace-nowrap font-bold font-rounded border-r border-slate-300">
+                      <!-- 日程セル（横スクロールで左端固定 sticky left-0 z-20） -->
+                      <td class="sticky left-0 z-20 bg-slate-100 text-center whitespace-nowrap font-bold border-b border-r-2 border-slate-300 py-3 px-2 min-w-[85px] max-w-[85px] shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
                         <span :class="getDayColorClass(dayObj.dayOfWeek)" class="text-xs sm:text-sm block font-extrabold leading-tight">
                           {{ dayObj.month }}/{{ dayObj.day }}
                         </span>
@@ -296,17 +309,16 @@
                         </span>
                       </td>
 
-                      <!-- Aチームセル -->
-                      <td class="p-1.5 border-r border-slate-200 align-top"
-                          :class="{'cursor-pointer hover:bg-blue-50/40': getCategorySchedules(dayObj.dateFull, 'Aチーム').length === 1}"
+                      <!-- Aチームセル（タップで詳細モーダル起動） -->
+                      <td class="p-2 border-b border-r border-slate-200 align-top bg-white min-h-[50px] transition"
+                          :class="{'cursor-pointer hover:bg-blue-50/50': getCategorySchedules(dayObj.dateFull, 'Aチーム').length > 0}"
                           @click="handleCellClick(dayObj.dateFull, 'Aチーム')">
                         <div v-for="(item, idx) in getCategorySchedules(dayObj.dateFull, 'Aチーム')" :key="item.id || idx"
                           @click.stop="openDetailModal(item)"
-                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border relative overflow-hidden"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition-all transform active:scale-95 shadow-xs border relative overflow-hidden hover:shadow-md"
                           :class="getScheduleCellClass(item, 'Aチーム')">
                           <div class="flex items-center justify-between text-[10px] font-bold">
                             <span>{{ item.meetingTime || '-' }}</span>
-                            <!-- 状態バッジ -->
                             <span v-if="item.isCanceled" class="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] font-black">中止</span>
                             <span v-else-if="item.isModified" class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-[9px] font-black animate-pulse flex items-center shadow-xs">
                               <span class="mr-0.5">⚠️</span>変更
@@ -317,13 +329,13 @@
                         </div>
                       </td>
 
-                      <!-- Bチームセル -->
-                      <td class="p-1.5 border-r border-slate-200 align-top"
-                          :class="{'cursor-pointer hover:bg-emerald-50/40': getCategorySchedules(dayObj.dateFull, 'Bチーム').length === 1}"
+                      <!-- Bチームセル（タップで詳細モーダル起動） -->
+                      <td class="p-2 border-b border-r border-slate-200 align-top bg-white min-h-[50px] transition"
+                          :class="{'cursor-pointer hover:bg-emerald-50/50': getCategorySchedules(dayObj.dateFull, 'Bチーム').length > 0}"
                           @click="handleCellClick(dayObj.dateFull, 'Bチーム')">
                         <div v-for="(item, idx) in getCategorySchedules(dayObj.dateFull, 'Bチーム')" :key="item.id || idx"
                           @click.stop="openDetailModal(item)"
-                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border relative overflow-hidden"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition-all transform active:scale-95 shadow-xs border relative overflow-hidden hover:shadow-md"
                           :class="getScheduleCellClass(item, 'Bチーム')">
                           <div class="flex items-center justify-between text-[10px] font-bold">
                             <span>{{ item.meetingTime || '-' }}</span>
@@ -337,13 +349,13 @@
                         </div>
                       </td>
 
-                      <!-- Cチームセル -->
-                      <td class="p-1.5 border-r border-slate-200 align-top"
-                          :class="{'cursor-pointer hover:bg-amber-50/40': getCategorySchedules(dayObj.dateFull, 'Cチーム').length === 1}"
+                      <!-- Cチームセル（タップで詳細モーダル起動） -->
+                      <td class="p-2 border-b border-r border-slate-200 align-top bg-white min-h-[50px] transition"
+                          :class="{'cursor-pointer hover:bg-amber-50/50': getCategorySchedules(dayObj.dateFull, 'Cチーム').length > 0}"
                           @click="handleCellClick(dayObj.dateFull, 'Cチーム')">
                         <div v-for="(item, idx) in getCategorySchedules(dayObj.dateFull, 'Cチーム')" :key="item.id || idx"
                           @click.stop="openDetailModal(item)"
-                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border relative overflow-hidden"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition-all transform active:scale-95 shadow-xs border relative overflow-hidden hover:shadow-md"
                           :class="getScheduleCellClass(item, 'Cチーム')">
                           <div class="flex items-center justify-between text-[10px] font-bold">
                             <span>{{ item.meetingTime || '-' }}</span>
@@ -357,13 +369,13 @@
                         </div>
                       </td>
 
-                      <!-- 低学年セル -->
-                      <td class="p-1.5 border-r border-slate-200 align-top"
-                          :class="{'cursor-pointer hover:bg-rose-50/40': getCategorySchedules(dayObj.dateFull, '低学年').length === 1}"
+                      <!-- 低学年セル（タップで詳細モーダル起動） -->
+                      <td class="p-2 border-b border-r border-slate-200 align-top bg-white min-h-[50px] transition"
+                          :class="{'cursor-pointer hover:bg-rose-50/50': getCategorySchedules(dayObj.dateFull, '低学年').length > 0}"
                           @click="handleCellClick(dayObj.dateFull, '低学年')">
                         <div v-for="(item, idx) in getCategorySchedules(dayObj.dateFull, '低学年')" :key="item.id || idx"
                           @click.stop="openDetailModal(item)"
-                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border relative overflow-hidden"
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition-all transform active:scale-95 shadow-xs border relative overflow-hidden hover:shadow-md"
                           :class="getScheduleCellClass(item, '低学年')">
                           <div class="flex items-center justify-between text-[10px] font-bold">
                             <span>{{ item.meetingTime || '-' }}</span>
@@ -377,13 +389,13 @@
                         </div>
                       </td>
 
-                      <!-- 全体共通セル -->
-                      <td class="p-1.5 align-top bg-purple-50/20"
-                          :class="{'cursor-pointer hover:bg-purple-50/50': getCategorySchedules(dayObj.dateFull, '全て').length === 1}"
+                      <!-- 全体共通セル（タップで詳細モーダル起動） -->
+                      <td class="p-2 border-b border-slate-200 align-top bg-purple-50/20 min-h-[50px] transition"
+                          :class="{'cursor-pointer hover:bg-purple-50/60': getCategorySchedules(dayObj.dateFull, '全て').length > 0}"
                           @click="handleCellClick(dayObj.dateFull, '全て')">
                         <div v-for="(item, idx) in getCategorySchedules(dayObj.dateFull, '全て')" :key="item.id || idx"
                           @click.stop="openDetailModal(item)"
-                          class="p-2 rounded-xl mb-1 cursor-pointer transition transform active:scale-95 shadow-xs border border-purple-200 bg-purple-50 text-purple-950">
+                          class="p-2 rounded-xl mb-1 cursor-pointer transition-all transform active:scale-95 shadow-xs border border-purple-200 bg-purple-50 text-purple-950 hover:shadow-md">
                           <div class="text-[9px] font-extrabold text-purple-800 flex items-center justify-between">
                             <span>📢 全体連絡</span>
                             <span v-if="item.isCanceled" class="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] font-black">中止</span>
@@ -399,8 +411,9 @@
                 </table>
               </div>
             </div>
+            
             <p class="text-[11px] text-slate-500 text-right pr-2 font-medium no-print">
-              👈 日程列は固定されています。横スクロールで各チームの予定を確認＆タップで詳細表示できます
+              💡 縦横固定対応：縦スクロールで「各チーム名」が、横スクロールで「日程」が常に固定表示されます
             </p>
           </div>
 
@@ -592,7 +605,7 @@
               </div>
             </div>
 
-            <!-- ★★★ 予定の変更・中止時：その時点が経過していない（本日以降の）登録内容を選択 ★★★ -->
+            <!-- 予定の変更・中止時：その時点が経過していない（本日以降の）登録内容を選択 -->
             <div v-if="formData.type === '予定の変更' || formData.type === '中止（雨天など）'"
                  class="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-300 space-y-2.5 shadow-sm">
               <div class="flex items-center justify-between">
@@ -622,7 +635,7 @@
               </div>
             </div>
 
-            <!-- カテゴリー（★複数選択対応） -->
+            <!-- カテゴリー（複数選択対応） -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <label class="block font-bold text-slate-700">対象カテゴリー（複数選択可）</label>
@@ -774,8 +787,11 @@
     <!-- ========================================== -->
     <!-- 詳細予定モーダル（タップで開く） -->
     <!-- ========================================== -->
-    <div v-if="selectedDetailItem" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3.5 sm:p-4 no-print" @click.self="selectedDetailItem = null">
-      <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100 animate-in fade-in zoom-in duration-150">
+    <div v-if="selectedDetailItem"
+         class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3.5 sm:p-4 no-print"
+         @click.self="selectedDetailItem = null">
+      <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100">
+        
         <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white p-4 flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="text-xl">📄</span>
@@ -795,7 +811,7 @@
             天候不良等により活動中止
           </div>
 
-          <!-- 変更履歴・差分ログがある場合（視覚的フィードバック） -->
+          <!-- 変更履歴がある場合 -->
           <div v-if="selectedDetailItem.isModified" class="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-300 text-amber-950 space-y-1 shadow-sm">
             <span class="font-black text-xs text-amber-900 flex items-center">
               <span class="mr-1 text-base">⚠️</span> 変更あり
@@ -944,6 +960,19 @@
 
   </div>
 
+  <!-- セーフティスクリプト（万一のマウント遅延時も真っ白化を防止） -->
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        var app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+          app.style.opacity = '1';
+        }
+      }, 300);
+    });
+  </script>
+
   <script>
     // ==========================================================================
     // ★★★ GAS APIエンドポイント設定 ★★★
@@ -955,7 +984,7 @@
     const app = createApp({
       setup() {
         const currentTab = ref('schedule');
-        const viewMode = ref('calendar'); // 'card' or 'calendar'
+        const viewMode = ref('calendar'); // デフォルトはカレンダー表表示
         const loading = ref(false);
         const submitting = ref(false);
         const toastMessage = ref('');
@@ -982,7 +1011,7 @@
         // 登録フォームデータ（初期値：完全にフラット）
         const createInitialFormData = () => ({
           type: '新規登録',
-          categories: [], // 完全に未選択
+          categories: [], // 未選択
           date: '',       // 未選択
           meetingTime: '',// 未選択
           place: '',      // 未選択
@@ -1075,7 +1104,7 @@
         };
 
         // ==========================================
-        // 本日以降（その時点が経過していない）予定の抽出
+        // 本日以降（未経過）予定の抽出
         // ==========================================
         const upcomingSchedules = computed(() => {
           const now = new Date();
@@ -1095,8 +1124,8 @@
             }
             return true;
           }).sort((a, b) => {
-            const da = new Date(a.year, a.month - 1, a.day).getTime();
-            const db = new Date(b.year, b.month - 1, b.day).getTime();
+            const da = new Date(a.year || 2026, (a.month || 1) - 1, a.day || 1).getTime();
+            const db = new Date(b.year || 2026, (b.month || 1) - 1, b.day || 1).getTime();
             return da - db;
           });
         });
@@ -1123,10 +1152,8 @@
         const setFormType = (type) => {
           formData.value.type = type;
           if (type === '新規登録') {
-            // 新規登録時は誤登録防止のため完全フラットにリセット
             resetFormData(false);
           } else {
-            // 予定の変更・中止時は、もし未選択なら案内
             if (!selectedUpcomingScheduleId.value && upcomingSchedules.value.length > 0) {
               showToast(`📌 ${type === '予定の変更' ? '変更' : '中止'}する対象の予定を選択してください`);
             }
@@ -1138,7 +1165,6 @@
           resetFormData(false);
         };
 
-        // ドロップダウンで予定が選択されたときにフォームに自動反映
         const onSelectUpcomingSchedule = () => {
           const item = upcomingSchedules.value.find(s => s.id === selectedUpcomingScheduleId.value);
           if (!item) return;
@@ -1146,14 +1172,13 @@
           loadScheduleIntoForm(item, formData.value.type);
         };
 
-        // 予定データをフォームに読み込む共通関数
         const loadScheduleIntoForm = (item, type = '予定の変更') => {
           formData.value.type = type;
           formData.value.categories = [item.category];
 
-          const y = String(item.year);
-          const m = String(item.month).padStart(2, '0');
-          const d = String(item.day).padStart(2, '0');
+          const y = String(item.year || new Date().getFullYear());
+          const m = String(item.month || 1).padStart(2, '0');
+          const d = String(item.day || 1).padStart(2, '0');
           formData.value.date = `${y}-${m}-${d}`;
 
           formData.value.meetingTime = item.meetingTime || '';
@@ -1179,11 +1204,10 @@
 
           selectedUpcomingScheduleId.value = item.id;
           currentTab.value = 'create';
-          selectedDetailItem.value = null; // 詳細モーダルが開いていれば閉じる
-          showToast(`📋 ${item.dateFormatted} 【${item.category}】 の予定を読み込みました`);
+          selectedDetailItem.value = null;
+          showToast(`📋 ${item.dateFormatted || ''} 【${item.category}】 の予定を読み込みました`);
         };
 
-        // モーダル等からのクイック操作
         const startEditSchedule = (item) => {
           loadScheduleIntoForm(item, '予定の変更');
         };
@@ -1209,66 +1233,114 @@
         // ==========================================
         // 認証処理
         // ==========================================
+        const TOKEN_KEY = 'kt_auth_token';
+        const SCHEDULE_CACHE_KEY = 'kt_schedules_cache_v1';
+        const getToken = () => { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { return null; } };
+        const parseToken = (token) => {
+          if (!token) return null;
+          const parts = String(token).split('.');
+          if (parts.length !== 3) return null;
+          const exp = Number(parts[1]);
+          if (!exp || Date.now() > exp) return null;
+          if (parts[0] !== 'viewer' && parts[0] !== 'admin') return null;
+          return { role: parts[0], exp };
+        };
+        // 保存するのは署名付きトークンのみ。役割はトークンから読んで表示用に
+        // 使うだけで、データの可否はサーバーが署名で判定する。
         const checkAuthStorage = () => {
+          const parsed = parseToken(getToken());
+          if (!parsed) { clearToken(); return; }
+          isAuthenticated.value = true;
+          isAdmin.value = parsed.role === 'admin';
+          loadCachedSchedules();
+        };
+        const clearToken = () => {
+          try { localStorage.removeItem(TOKEN_KEY); } catch(e) {}
+          try { localStorage.removeItem(SCHEDULE_CACHE_KEY); } catch(e) {}
+        };
+        // 起動高速化: 前回取得した予定を先に表示し、裏で最新を取りに行く
+        const loadCachedSchedules = () => {
           try {
-            const role = localStorage.getItem('kt_auth_role');
-            if (role === 'admin') {
-              isAuthenticated.value = true;
-              isAdmin.value = true;
-            } else if (role === 'viewer') {
-              isAuthenticated.value = true;
-              isAdmin.value = false;
-            }
+            const raw = localStorage.getItem(SCHEDULE_CACHE_KEY);
+            if (!raw) return;
+            const cached = JSON.parse(raw);
+            if (!cached || !Array.isArray(cached.schedules)) return;
+            if (Date.now() - (cached.savedAt || 0) > 12 * 60 * 60 * 1000) return;
+            schedules.value = cached.schedules;
           } catch(e) {}
         };
-
-        const handleLogin = () => {
-          authChecking.value = true;
-          const pass = inputPasscode.value.trim();
-
-          const currentYear = new Date().getFullYear();
-          const adminList = ["1978", `admin${currentYear}`, "kaji1978"];
-          const viewList = [`kaji${currentYear}`, `${currentYear}`, "kaji", "tigers", "加治"];
-
-          if (adminList.includes(pass) || pass === "1978") {
-            isAuthenticated.value = true;
-            isAdmin.value = true;
-            localStorage.setItem('kt_auth_role', 'admin');
-            showToast("👑 管理者としてログインしました");
-          } else if (viewList.includes(pass) || pass.length >= 3) {
-            isAuthenticated.value = true;
-            isAdmin.value = false;
-            localStorage.setItem('kt_auth_role', 'viewer');
-            showToast("👥 閲覧メンバーとしてログインしました");
-          } else {
-            alert("パスワードが正しくありません。");
-            authChecking.value = false;
-            return;
-          }
-
-          inputPasscode.value = '';
-          authChecking.value = false;
-          refreshData();
+        const saveCachedSchedules = () => {
+          try { localStorage.setItem(SCHEDULE_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), schedules: schedules.value })); } catch(e) {}
+        };
+        const handleUnauthorized = () => {
+          clearToken();
+          schedules.value = [];
+          isAuthenticated.value = false;
+          isAdmin.value = false;
+          showToast("ログインの有効期限が切れました。再度ログインしてください");
         };
 
-        const verifyAdminPass = () => {
+        const handleLogin = async () => {
+          const pass = inputPasscode.value.trim();
+          if (!pass) { alert("パスワードを入力してください。"); return; }
+          authChecking.value = true;
+          try {
+            const res = await fetch(GAS_API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: "login", passcode: pass })
+            });
+            const result = await res.json();
+            if (!result.ok || !result.token) {
+              alert("パスワードが正しくありません。");
+              return;
+            }
+            try { localStorage.setItem(TOKEN_KEY, result.token); } catch(e) {}
+            isAuthenticated.value = true;
+            isAdmin.value = result.role === 'admin';
+            showToast(isAdmin.value ? "👑 管理者としてログインしました" : "👥 閲覧メンバーとしてログインしました");
+            inputPasscode.value = '';
+            await refreshData();
+          } catch (err) {
+            console.error("ログインエラー:", err);
+            alert("ログインに失敗しました。通信状況を確認して再度お試しください。");
+          } finally {
+            authChecking.value = false;
+          }
+        };
+
+        const verifyAdminPass = async () => {
           const pass = adminInputPass.value.trim();
-          const currentYear = new Date().getFullYear();
-          if (pass === "1978" || pass === `admin${currentYear}` || pass.toLowerCase() === "kaji1978") {
+          if (!pass) { alert("管理者パスワードを入力してください。"); return; }
+          try {
+            const res = await fetch(GAS_API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: "login", passcode: pass })
+            });
+            const result = await res.json();
+            if (!result.ok || result.role !== 'admin' || !result.token) {
+              alert("管理者パスワードが正しくありません。");
+              return;
+            }
+            try { localStorage.setItem(TOKEN_KEY, result.token); } catch(e) {}
             isAdmin.value = true;
-            localStorage.setItem('kt_auth_role', 'admin');
+            isAuthenticated.value = true;
             showAuthSwitchModal.value = false;
             showToast("👑 管理者に切り替わりました");
-          } else {
-            alert("管理者パスワードが正しくありません。");
+          } catch (err) {
+            console.error("管理者認証エラー:", err);
+            alert("認証に失敗しました。通信状況を確認して再度お試しください。");
+          } finally {
+            adminInputPass.value = '';
           }
-          adminInputPass.value = '';
         };
 
         const logout = () => {
+          clearToken();
+          schedules.value = [];
           isAuthenticated.value = false;
           isAdmin.value = false;
-          localStorage.removeItem('kt_auth_role');
           currentTab.value = 'schedule';
           showToast("ログアウトしました");
         };
@@ -1277,14 +1349,19 @@
         // データ通信（fetch）
         // ==========================================
         const refreshData = async () => {
+          const token = getToken();
+          if (!token || !parseToken(token)) { handleUnauthorized(); return; }
           loading.value = true;
           try {
-            const fetchUrl = `${GAS_API_URL}?action=getSchedules&_=${Date.now()}`;
+            // キャッシュバスター(_=Date.now())を外す。GAS側の60秒キャッシュが効き、
+            // 再訪時は localStorage の予定を先に表示してから裏で更新する。
+            const fetchUrl = `${GAS_API_URL}?action=getSchedules&token=${encodeURIComponent(token)}`;
             const res = await fetch(fetchUrl);
             if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
             const data = await res.json();
-            
-            // 取得したスケジュールデータを整形（変更状態・中止状態・一意キーを確実に付与）
+            if (data && data.error === 'unauthorized') { handleUnauthorized(); return; }
+            if (data && data.error) throw new Error(data.error);
+
             const rawList = Array.isArray(data) ? data : [];
             schedules.value = rawList.map((item, idx) => {
               const statusStr = String(item.status || '').trim();
@@ -1298,10 +1375,11 @@
                 isCanceled: isCanceled
               };
             });
+            saveCachedSchedules();
 
           } catch (err) {
             console.error("データ取得エラー:", err);
-            showToast("⚠️ データ更新完了");
+            showToast("❌ データの取得に失敗しました");
           } finally {
             loading.value = false;
           }
@@ -1320,7 +1398,7 @@
           submitting.value = true;
           const payload = {
             ...formData.value,
-            passcode: '1978'
+            token: getToken()
           };
 
           try {
@@ -1331,6 +1409,7 @@
             });
 
             const result = await res.json();
+            if (result.error === 'unauthorized') { handleUnauthorized(); throw new Error("ログインの有効期限が切れました。再度ログインしてください"); }
             if (result.success) {
               const catNames = formData.value.categories.join('、');
               showToast(`✅ [${catNames}] の予定を反映しました！`);
@@ -1353,11 +1432,10 @@
         // ==========================================
         const monthAllSchedules = computed(() => {
           return schedules.value
-            .filter(s => s.month === selectedMonth.value)
+            .filter(s => s.year === selectedYear.value && s.month === selectedMonth.value)
             .sort((a, b) => (a.day || 0) - (b.day || 0));
         });
 
-        // カレンダー表用の月間活動日リスト（重複排除・昇順ソート）
         const monthActiveDays = computed(() => {
           const map = new Map();
           monthAllSchedules.value.forEach(s => {
@@ -1387,7 +1465,7 @@
 
         const filteredSchedules = computed(() => {
           return schedules.value.filter(s => {
-            const matchMonth = (s.month === selectedMonth.value);
+            const matchMonth = (s.year === selectedYear.value && s.month === selectedMonth.value);
             const matchCat = (selectedCategory.value === 'すべて' || 
                               s.category === selectedCategory.value || 
                               isAllCategory(s.category));
@@ -1448,7 +1526,7 @@
         });
 
         // ==========================================
-        // 詳細モーダル・クリック処理
+        // 詳細モーダル・クリック処理（タップで詳細）
         // ==========================================
         const openDetailModal = (item) => {
           if (!item) return;
@@ -1457,41 +1535,50 @@
 
         const handleCellClick = (dateFull, cat) => {
           const list = getCategorySchedules(dateFull, cat);
-          if (list.length === 1) {
+          if (list && list.length > 0) {
             openDetailModal(list[0]);
           }
         };
 
         // ==========================================
-        // PDFダウンロード機能（html2pdf）
+        // PDFダウンロード機能（確実・安全な動的読み込み）
         // ==========================================
-        const downloadCalendarPDF = () => {
+        const downloadCalendarPDF = async () => {
           const element = document.getElementById('calendar-pdf-target');
           if (!element) {
-            showToast("カレンダー要素が見つかりません");
+            window.print();
             return;
           }
-          showToast("📄 PDFを作成中...");
 
-          const fileName = `加治タイガース_${selectedYear.value}年${selectedMonth.value}月_予定カレンダー.pdf`;
+          showToast("📄 PDFを作成しています...");
 
-          const opt = {
-            margin: [8, 8, 8, 8],
-            filename: fileName,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-          };
+          try {
+            // html2pdfライブラリが存在しない場合は動的ロード
+            if (!window.html2pdf) {
+              await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
+              });
+            }
 
-          if (window.html2pdf) {
-            window.html2pdf().set(opt).from(element).save().then(() => {
-              showToast("✅ PDFを保存しました！");
-            }).catch(err => {
-              console.error("PDF保存エラー:", err);
-              // フォールバック: 標準の印刷機能
-              window.print();
-            });
-          } else {
+            const fileName = `加治タイガース_${selectedYear.value}年${selectedMonth.value}月_予定カレンダー.pdf`;
+            const opt = {
+              margin: [8, 8, 8, 8],
+              filename: fileName,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, logging: false },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            await window.html2pdf().set(opt).from(element).save();
+            showToast("✅ PDFを保存しました！");
+
+          } catch (err) {
+            console.error("PDF保存処理:", err);
+            // フォールバック: 標準印刷（PDF保存）
             window.print();
           }
         };
