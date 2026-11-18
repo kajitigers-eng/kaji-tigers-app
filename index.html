@@ -488,7 +488,7 @@
                     </div>
 
                     <!-- 変更差分ハイライト表示 -->
-                    <div v-if="item.isModified && item.rawDiffNote && item.rawDiffNote.includes('➔')"
+                    <div v-if="item.isModified && String(item.rawDiffNote || '').includes('➔')"
                       class="p-2 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs space-y-0.5">
                       <span class="font-bold text-[10px] text-amber-800 block">【変更箇所】</span>
                       <p class="leading-relaxed">{{ item.rawDiffNote }}</p>
@@ -816,7 +816,7 @@
             <span class="font-black text-xs text-amber-900 flex items-center">
               <span class="mr-1 text-base">⚠️</span> 変更あり
             </span>
-            <p v-if="selectedDetailItem.rawDiffNote && selectedDetailItem.rawDiffNote.includes('➔')" class="text-xs leading-relaxed font-bold">
+            <p v-if="String(selectedDetailItem.rawDiffNote || '').includes('➔')" class="text-xs leading-relaxed font-bold">
               {{ selectedDetailItem.rawDiffNote }}
             </p>
             <p v-else class="text-xs">この予定は変更されました。最新の活動情報をご確認ください。</p>
@@ -998,6 +998,12 @@
         const adminInputPass = ref('');
 
         const selectedDetailItem = ref(null);
+
+        // 描画エラーが起きてもアプリ全体が白くならないよう、モーダルだけ閉じる
+        window.__ktOnRenderError = (err) => {
+          try { selectedDetailItem.value = null; } catch(e) {}
+          try { showToast("詳細の表示に失敗しました"); } catch(e) {}
+        };
         const selectedYear = ref(new Date().getFullYear());
         const selectedMonth = ref(new Date().getMonth() + 1);
 
@@ -1371,6 +1377,16 @@
               return {
                 ...item,
                 id: item.id || `kt_${item.dateFull || ''}_${item.category || ''}_${idx}`,
+                status: String(item.status || ''),
+                category: String(item.category || ''),
+                place: String(item.place || ''),
+                activity: String(item.activity || ''),
+                tournament: String(item.tournament || ''),
+                opponent: String(item.opponent || ''),
+                note: String(item.note || ''),
+                rawDiffNote: item.rawDiffNote == null ? '' : String(item.rawDiffNote),
+                displayDateTime: String(item.displayDateTime || ''),
+                dateFormatted: String(item.dateFormatted || ''),
                 isModified: isModified,
                 isCanceled: isCanceled
               };
@@ -1481,7 +1497,7 @@
 
         const getSingleLineText = (item) => {
           if (!item) return '';
-          const isCanceled = (item.isCanceled || (item.status && item.status.includes('中止')));
+          const isCanceled = (item.isCanceled || String(item.status || '').includes('中止'));
           const displayCat = isAllCategory(item.category) ? '全て' : item.category;
 
           if (isCanceled) {
@@ -1501,7 +1517,7 @@
           if (item.matchStartTime) msg += `■ 試合開始: ${item.matchStartTime}〜\n`;
           if (item.note) msg += `■ 備考: ${item.note}\n`;
           msg += `----------------------------`;
-          if (item.activity && item.activity.includes('練習試合')) {
+          if (String(item.activity || '').includes('練習試合')) {
             msg += `\n差し入れ等の交換は行っておりません。ご了承ください。`;
           }
           return msg;
@@ -1646,6 +1662,12 @@
         };
       }
     });
+
+    // 描画中の例外を吸収し、モーダルを閉じて復旧する
+    app.config.errorHandler = (err) => {
+      console.error("描画エラー:", err);
+      if (typeof window.__ktOnRenderError === 'function') window.__ktOnRenderError(err);
+    };
 
     app.mount('#app');
   </script>
