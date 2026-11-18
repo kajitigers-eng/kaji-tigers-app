@@ -1440,34 +1440,41 @@
           }
 
           submitting.value = true;
-          const payload = {
-            ...formData.value,
-            token: getToken()
-          };
+
+          // カテゴリーごとに1件ずつ送信する。formData には categories（配列）しかなく
+          // category（単数）がないため、従来は GAS 側で "Aチーム" に化けていた。
+          // 「全て」も category: '全て' として送る。
+          const targetCategories = formData.value.categories.slice();
+          const catNames = targetCategories.join('、');
 
           // サーバーが応答しないまま止まらないよう、30秒で打ち切る
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
           try {
-            const res = await fetch(GAS_API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify(payload),
-              signal: controller.signal
-            });
-            clearTimeout(timeoutId);
+            for (const cat of targetCategories) {
+              const payload = {
+                ...formData.value,
+                category: cat,
+                token: getToken()
+              };
+              const res = await fetch(GAS_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+              });
 
-            const result = await res.json();
-            if (result.error === 'unauthorized') { handleUnauthorized(); throw new Error("ログインの有効期限が切れました。再度ログインしてください"); }
-            if (result.success) {
-              const catNames = formData.value.categories.join('、');
-              showToast(`✅ [${catNames}] の予定を反映しました！`);
-              resetFormData(false);
-              await refreshData();
-              currentTab.value = 'schedule';
-            } else {
-              throw new Error(result.error || "登録処理に失敗しました");
+              const result = await res.json();
+              if (result.error === 'unauthorized') { handleUnauthorized(); throw new Error("ログインの有効期限が切れました。再度ログインしてください"); }
+              if (!result.success) {
+                throw new Error(result.error || "登録処理に失敗しました");
+              }
             }
+            clearTimeout(timeoutId);
+            showToast(`✅ [${catNames}] の予定を反映しました！`);
+            resetFormData(false);
+            await refreshData();
+            currentTab.value = 'schedule';
           } catch (err) {
             clearTimeout(timeoutId);
             console.error("送信エラー:", err);
