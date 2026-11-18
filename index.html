@@ -1604,6 +1604,9 @@
         // ==========================================
         // PDFダウンロード機能（確実・安全な動的読み込み）
         // ==========================================
+        // カレンダー表をA4横1ページに収めてPDF化する。
+        // html2pdf() の既定では表が長いと複数ページに分割されるため、
+        // html2canvas で描画してから1ページに収まる倍率で貼り付ける。
         const downloadCalendarPDF = async () => {
           const element = document.getElementById('calendar-pdf-target');
           if (!element) {
@@ -1624,15 +1627,10 @@
                 document.head.appendChild(s);
               });
             }
+            const JSPDF = window.jspdf && window.jspdf.jsPDF;
+            if (!JSPDF) throw new Error("jsPDF が読み込めませんでした");
 
             const fileName = `加治タイガース_${selectedYear.value}年${selectedMonth.value}月_予定カレンダー.pdf`;
-            const opt = {
-              margin: [8, 8, 8, 8],
-              filename: fileName,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, logging: false },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
 
             // PDF化の間だけスクロール枠を全開にして、表全体を1枚に収める
             const sc = element.querySelector('.calendar-scroll-container');
@@ -1640,7 +1638,20 @@
             const prevOverflow = sc ? sc.style.overflow : '';
             if (sc) { sc.style.maxHeight = 'none'; sc.style.overflow = 'visible'; }
             try {
-              await window.html2pdf().set(opt).from(element).save();
+              const canvas = await window.html2canvas(element, { scale: 2, useCORS: true, logging: false });
+              const imgData = canvas.toDataURL('image/jpeg', 0.98);
+              // A4横・余白8mmの1ページに、縦横比を保って収まる倍率で貼る
+              const pdf = new JSPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+              const pageW = pdf.internal.pageSize.getWidth() - 16;
+              const pageH = pdf.internal.pageSize.getHeight() - 16;
+              const pxToMm = 25.4 / 96;
+              const ratio = Math.min(pageW / (canvas.width * pxToMm), pageH / (canvas.height * pxToMm));
+              const w = canvas.width * pxToMm * ratio;
+              const h = canvas.height * pxToMm * ratio;
+              const x = (pdf.internal.pageSize.getWidth() - w) / 2;
+              const y = (pdf.internal.pageSize.getHeight() - h) / 2;
+              pdf.addImage(imgData, 'JPEG', x, y, w, h);
+              pdf.save(fileName);
             } finally {
               if (sc) { sc.style.maxHeight = prevMaxH; sc.style.overflow = prevOverflow; }
             }
