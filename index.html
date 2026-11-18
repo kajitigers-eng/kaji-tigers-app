@@ -700,7 +700,7 @@
             <!-- 活動日 -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">活動日</label>
-              <input type="date" v-model="formData.date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold">
+              <input type="date" v-model="formData.date" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold">
             </div>
 
             <!-- 「全て」選択時の備考入力欄 -->
@@ -711,7 +711,7 @@
               </div>
               <div>
                 <label class="block font-bold text-purple-950 mb-1 text-xs">備考・全体連絡事項（必須）</label>
-                <textarea v-model="formData.note" required rows="4"
+                <textarea v-model="formData.note" rows="4"
                   placeholder="例: 雨天のため全学年活動中止。グラウンド清掃（保護者集合9:00）。保護者会のお知らせなど"
                   class="w-full bg-white border border-purple-300 rounded-xl p-2.5 text-slate-800 text-xs sm:text-sm focus:ring-2 focus:ring-purple-400"></textarea>
               </div>
@@ -722,14 +722,14 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">集合時間</label>
-                  <select v-model="formData.meetingTime" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800">
+                  <select v-model="formData.meetingTime" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800">
                     <option value="" disabled selected>集合時間を選択</option>
                     <option v-for="time in timeChoices" :key="time" :value="time">{{ time }}</option>
                   </select>
                 </div>
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">活動内容</label>
-                  <select v-model="formData.activity" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800">
+                  <select v-model="formData.activity" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800">
                     <option value="" disabled selected>活動内容を選択</option>
                     <option value="練習">練習</option>
                     <option value="公式戦">公式戦</option>
@@ -741,11 +741,11 @@
 
               <div>
                 <label class="block font-bold text-slate-700 mb-1">活動場所</label>
-                <select v-model="formData.place" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold">
+                <select v-model="formData.place" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold">
                   <option value="" disabled selected>活動場所を選択</option>
                   <option v-for="p in placeChoices" :key="p" :value="p">{{ p }}</option>
                 </select>
-                <input v-if="formData.place === 'その他'" type="text" v-model="formData.placeOther" placeholder="具体的な場所を入力してください" required
+                <input v-if="formData.place === 'その他'" type="text" v-model="formData.placeOther" placeholder="具体的な場所を入力してください"
                   class="mt-1.5 w-full bg-amber-50/60 border border-amber-300 rounded-xl p-2.5 text-slate-800">
               </div>
 
@@ -1413,6 +1413,31 @@
             alert("活動日を入力してください。");
             return;
           }
+          // ブラウザ標準の required だけだと、未入力時に小さな吹き出しだけで
+          // 送信が止まり「何も起きない」ように見えるため、ここで明示的に知らせる
+          if (formData.value.categories.includes('全て')) {
+            if (!formData.value.note || !formData.value.note.trim()) {
+              alert("「全て」の場合は、備考・全体連絡事項を入力してください。");
+              return;
+            }
+          } else {
+            if (!formData.value.meetingTime) {
+              alert("集合時間を選択してください。");
+              return;
+            }
+            if (!formData.value.activity) {
+              alert("活動内容を選択してください。");
+              return;
+            }
+            if (!formData.value.place) {
+              alert("活動場所を選択してください。");
+              return;
+            }
+            if (formData.value.place === 'その他' && !formData.value.placeOther.trim()) {
+              alert("活動場所の「その他」の内容を入力してください。");
+              return;
+            }
+          }
 
           submitting.value = true;
           const payload = {
@@ -1420,12 +1445,17 @@
             token: getToken()
           };
 
+          // サーバーが応答しないまま止まらないよう、30秒で打ち切る
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
           try {
             const res = await fetch(GAS_API_URL, {
               method: "POST",
               headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify(payload)
+              body: JSON.stringify(payload),
+              signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
             const result = await res.json();
             if (result.error === 'unauthorized') { handleUnauthorized(); throw new Error("ログインの有効期限が切れました。再度ログインしてください"); }
@@ -1439,8 +1469,13 @@
               throw new Error(result.error || "登録処理に失敗しました");
             }
           } catch (err) {
+            clearTimeout(timeoutId);
             console.error("送信エラー:", err);
-            alert("登録エラー: " + err.message);
+            if (err && err.name === 'AbortError') {
+              alert("登録エラー: サーバーからの応答が30秒以上ありませんでした。電波状況を確認して、もう一度お試しください。");
+            } else {
+              alert("登録エラー: " + err.message);
+            }
           } finally {
             submitting.value = false;
           }
