@@ -1000,14 +1000,9 @@
         const selectedDetailItem = ref(null);
 
         // 描画エラーが起きてもアプリ全体が白くならないよう、モーダルだけ閉じる
-        // 診断用：エラーの内容そのものをトーストに出す（15秒表示）
         window.__ktOnRenderError = (err) => {
           try { selectedDetailItem.value = null; } catch(e) {}
-          try {
-            const m = (err && err.message) ? err.message : String(err);
-            toastMessage.value = "詳細の表示に失敗しました: " + m;
-            setTimeout(() => { toastMessage.value = ''; }, 15000);
-          } catch(e) {}
+          try { showToast("詳細の表示に失敗しました"); } catch(e) {}
         };
         const selectedYear = ref(new Date().getFullYear());
         const selectedMonth = ref(new Date().getMonth() + 1);
@@ -1654,7 +1649,7 @@
           currentTab, viewMode, loading, submitting, toastMessage,
           isAuthenticated, isAdmin, authChecking, inputPasscode, showAuthSwitchModal, adminInputPass,
           handleLogin, verifyAdminPass, logout,
-          selectedDetailItem, openDetailModal, handleCellClick, copyText, copySingleLine,
+          selectedDetailItem, openDetailModal, handleCellClick, copyText, copySingleLine, getSingleLineText,
           selectedYear, selectedMonth, selectedCategory, categories, monthAllSchedules, monthActiveDays,
           lineFilterCategory, lineSelectedDate, availableDates,
           schedules, filteredSchedules, generatedLineMessages,
