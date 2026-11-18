@@ -266,7 +266,10 @@
               <!-- ★★★ 行列固定スクロールテーブルコンテナ ★★★ -->
               <!-- 縦スクロールでヘッダー（日程・A・B・C・低学年・全体共通）が上部固定 -->
               <!-- 横スクロールで日程列が左部固定 -->
-              <div class="calendar-scroll-container max-h-[72vh] overflow-auto relative border-t border-slate-200 bg-white">
+              <!-- max-h を 72vh → 55vh に下げた理由：月の予定が少ないと表が枠に収まってしまい -->
+              <!-- 枠内の縦スクロールが発生せず、ページスクロールでヘッダーが流れてしまうため。 -->
+              <!-- 枠を低くすることで常に枠内スクロールが発生し、ヘッダーが枠上部に固定される。 -->
+              <div class="calendar-scroll-container max-h-[55vh] overflow-auto relative border-t border-slate-200 bg-white">
                 <table class="w-full text-left border-separate border-spacing-0 min-w-[780px]">
                   
                   <!-- テーブルヘッダー（縦スクロールで上端固定 sticky top-0） -->
@@ -1589,7 +1592,16 @@
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
 
-            await window.html2pdf().set(opt).from(element).save();
+            // PDF化の間だけスクロール枠を全開にして、表全体を1枚に収める
+            const sc = element.querySelector('.calendar-scroll-container');
+            const prevMaxH = sc ? sc.style.maxHeight : '';
+            const prevOverflow = sc ? sc.style.overflow : '';
+            if (sc) { sc.style.maxHeight = 'none'; sc.style.overflow = 'visible'; }
+            try {
+              await window.html2pdf().set(opt).from(element).save();
+            } finally {
+              if (sc) { sc.style.maxHeight = prevMaxH; sc.style.overflow = prevOverflow; }
+            }
             showToast("✅ PDFを保存しました！");
 
           } catch (err) {
